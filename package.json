@@ -1,0 +1,11 @@
+{
+  "name": "roulette-online",
+  "private": true,
+  "scripts": {
+    "build": "pnpm -r build",
+    "test": "pnpm -r test",
+    "dev": "pnpm run dev:server & pnpm run dev:web",
+    "dev:web": "pnpm --filter @roulette/web dev",
+    "dev:server": "pnpm --filter @roulette/server dev"
+  }
+}
