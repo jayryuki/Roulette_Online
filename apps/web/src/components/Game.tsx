@@ -19,6 +19,12 @@ export default function Game() {
   const [selectedAmount, setSelectedAmount] = useState(25);
   const [joined, setJoined] = useState(false);
 
+  // All hooks must be called before any early returns
+  const roundResult = useMemo(() => {
+    if (!gameState?.roundResult) return null;
+    try { return JSON.parse(gameState.roundResult); } catch { return null; }
+  }, [gameState?.roundResult]);
+
   useEffect(() => {
     if (roomCode && !joined) {
       joinRoom(roomCode, displayName).then(room => {
@@ -52,11 +58,6 @@ export default function Game() {
 
   const spinning = phase === 'SPINNING';
   const targetNumber = gameState.winningNumber >= 0 ? gameState.winningNumber : null;
-
-  const roundResult = useMemo(() => {
-    if (!gameState.roundResult) return null;
-    try { return JSON.parse(gameState.roundResult); } catch { return null; }
-  }, [gameState.roundResult]);
 
   return (
     <div className="min-h-screen bg-gray-900 text-white flex flex-col">
