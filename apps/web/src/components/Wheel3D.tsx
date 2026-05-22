@@ -1,6 +1,6 @@
 // apps/web/src/components/Wheel3D.tsx
 
-import { useRef, useMemo } from 'react';
+import { useRef, useMemo, useEffect } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { Text, Cylinder, Torus } from '@react-three/drei';
 import * as THREE from 'three';
@@ -17,7 +17,7 @@ interface WheelMeshProps {
 
 function WheelMesh({ targetNumber, spinning }: WheelMeshProps) {
   const groupRef = useRef<THREE.Group>(null);
-  const targetAngle = useRef(0);
+  const spinningRef = useRef(false);
 
   const pockets = useMemo(() => {
     return WHEEL_NUMBERS.map((num, index) => {
@@ -27,26 +27,42 @@ function WheelMesh({ targetNumber, spinning }: WheelMeshProps) {
     });
   }, []);
 
-  useMemo(() => {
-    if (targetNumber !== null && spinning) {
+  // When a new spin starts, calculate and set the target rotation
+  useEffect(() => {
+    if (targetNumber !== null && spinning && !spinningRef.current) {
       const targetIdx = WHEEL_NUMBERS.indexOf(targetNumber);
-      if (targetIdx >= 0) {
+      if (targetIdx >= 0 && groupRef.current) {
+        const currentRotation = groupRef.current.rotation.z;
         const pocketCenter = targetIdx * POCKET_ANGLE;
+        // We want the target pocket at the top (12 o'clock = angle PI/2)
+        // The wheel rotates clockwise, so we need to rotate to:
+        // finalRotation = some value where pocket is at top
         const fullSpins = 5 * Math.PI * 2;
-        targetAngle.current = fullSpins + (Math.PI * 2 - pocketCenter + Math.PI / 2);
+        const targetRotation = currentRotation + fullSpins + (Math.PI * 2 - pocketCenter);
+        groupRef.current.userData.targetRotation = targetRotation;
       }
+      spinningRef.current = true;
+    }
+    if (!spinning) {
+      spinningRef.current = false;
     }
   }, [targetNumber, spinning]);
 
   useFrame((_, delta) => {
     if (!groupRef.current) return;
 
-    if (spinning) {
-      const remaining = targetAngle.current - groupRef.current.rotation.z;
+    if (spinning && groupRef.current.userData.targetRotation !== undefined) {
+      const target = groupRef.current.userData.targetRotation;
+      const remaining = target - groupRef.current.rotation.z;
       if (Math.abs(remaining) > 0.01) {
+        // Ease-out: slow down as we approach the target
         groupRef.current.rotation.z += remaining * Math.min(delta * 3, 1);
+      } else {
+        groupRef.current.rotation.z = target;
+        delete groupRef.current.userData.targetRotation;
       }
-    } else {
+    } else if (!spinning) {
+      // Idle slow rotation
       groupRef.current.rotation.z += 0.003;
     }
   });
