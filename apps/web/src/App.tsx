@@ -1,7 +1,14 @@
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import Lobby from './components/Lobby';
+import Game from './components/Game';
+
 export default function App() {
   return (
-    <div className="flex items-center justify-center h-screen">
-      <h1 className="text-3xl font-bold">Roulette Online</h1>
-    </div>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<Lobby />} />
+        <Route path="/game/:roomCode" element={<Game />} />
+      </Routes>
+    </BrowserRouter>
   );
 }
