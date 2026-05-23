@@ -1,6 +1,6 @@
 // packages/roulette-game-core/src/models/bets.ts
 
-import { isRed, isBlack, DOUBLE_ZERO } from './wheel';
+import { isRed, isBlack, DOUBLE_ZERO } from './wheel.js';
 
 /**
  * Bet type string format:

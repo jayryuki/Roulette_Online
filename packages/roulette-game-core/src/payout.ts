@@ -1,6 +1,6 @@
 // packages/roulette-game-core/src/payout.ts
 
-import { isWinningBet, payoutMultiplier } from './models/bets';
+import { isWinningBet, payoutMultiplier } from './models/bets.js';
 
 export interface Chip {
   playerId: string;

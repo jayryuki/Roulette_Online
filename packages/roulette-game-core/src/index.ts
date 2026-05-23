@@ -12,8 +12,8 @@ export {
   numberColor,
   displayLabel,
   wheelIndex,
-} from './models/wheel';
-export type { PocketColor } from './models/wheel';
+} from './models/wheel.js';
+export type { PocketColor } from './models/wheel.js';
 
 export {
   parseBet,
@@ -21,30 +21,30 @@ export {
   isWinningBet,
   validateBet,
   SIMPLE_BETS,
-} from './models/bets';
-export type { BetType } from './models/bets';
+} from './models/bets.js';
+export type { BetType } from './models/bets.js';
 
 export {
   CHIP_COLORS,
   CHIP_COUNT,
   getChipColor,
   assignChipColor,
-} from './models/chip';
-export type { ChipColor } from './models/chip';
+} from './models/chip.js';
+export type { ChipColor } from './models/chip.js';
 
 // Engine
 export {
   canTransition,
   phaseType,
   VALID_TRANSITIONS,
-} from './engine/fsm';
-export type { PhaseType, GamePhase, LobbyPhase, BettingPhase, SpinningPhase, SettlementPhase, RoundEndPhase } from './engine/fsm';
+} from './engine/fsm.js';
+export type { PhaseType, GamePhase, LobbyPhase, BettingPhase, SpinningPhase, SettlementPhase, RoundEndPhase } from './engine/fsm.js';
 
-export type { PlayerAction } from './engine/actions';
+export type { PlayerAction } from './engine/actions.js';
 
 // Payout
 export {
   calculatePayouts,
   calculateNetProfit,
-} from './payout';
-export type { Chip, PayoutResult } from './payout';
+} from './payout.js';
+export type { Chip, PayoutResult } from './payout.js';
