@@ -1,6 +1,4 @@
-// apps/web/src/hooks/useRouletteRoom.ts
-
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useRef, useState, useCallback } from 'react';
 import { Client, Room } from 'colyseus.js';
 import type { RouletteGameState } from '../types';
 
@@ -8,17 +6,23 @@ const ENDPOINT = window.location.hostname === 'localhost'
   ? 'ws://localhost:2500'
   : `wss://${window.location.hostname}:2500`;
 
+// Module-level client singleton — survives React StrictMode remounts
+let sharedClient: Client | null = null;
+let connectingLock = false;
+
+function getClient(): Client {
+  if (!sharedClient) {
+    sharedClient = new Client(ENDPOINT);
+  }
+  return sharedClient;
+}
+
 export function useRouletteRoom() {
-  const clientRef = useRef<Client | null>(null);
   const roomRef = useRef<Room<RouletteGameState> | null>(null);
   const [gameState, setGameState] = useState<RouletteGameState | null>(null);
   const [connected, setConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
-
-  if (!clientRef.current) {
-    clientRef.current = new Client(ENDPOINT);
-  }
 
   const createRoom = useCallback(async (displayName: string) => {
     try {
@@ -37,20 +41,26 @@ export function useRouletteRoom() {
   }, []);
 
   const joinRoom = useCallback(async (roomCode: string, displayName: string) => {
+    // Prevent double-join from React StrictMode remount
+    if (connectingLock) return null;
+    // Already connected to this room
+    if (roomRef.current) return roomRef.current;
+
+    connectingLock = true;
     try {
       setError(null);
+
       const lookup = await fetch(`/api/rooms/${roomCode}`);
       if (!lookup.ok) throw new Error('Room not found');
       const { roomId } = await lookup.json();
 
-      const room = await clientRef.current!.joinById(roomId, { displayName });
+      const client = getClient();
+      const room = await client.joinById(roomId, { displayName });
       roomRef.current = room;
       setConnected(true);
       setSessionId(room.sessionId);
 
       room.onStateChange((state: any) => {
-        // Colyseus MapSchema is not a plain Map — convert to Map for React state.
-        // The spread operator on MapSchema produces a plain object, not a Map.
         const playersMap = new Map<string, any>();
         if (state.players) {
           for (const [key, value] of state.players.entries()) {
@@ -105,21 +115,19 @@ export function useRouletteRoom() {
         setConnected(false);
         setGameState(null);
         setSessionId(null);
+        roomRef.current = null;
       });
 
       room.onError((code, msg) => {
         setError(`Room error: ${msg}`);
       });
 
-      room.onMessage('place-your-bets', () => {});
-      room.onMessage('spin-result', () => {});
-      room.onMessage('round-result', () => {});
-      room.onMessage('shuffling', () => {});
-
       return room;
     } catch (e: any) {
       setError(e.message);
       return null;
+    } finally {
+      connectingLock = false;
     }
   }, []);
 
@@ -128,8 +136,10 @@ export function useRouletteRoom() {
   }, []);
 
   const leave = useCallback(() => {
-    roomRef.current?.leave();
-    roomRef.current = null;
+    if (roomRef.current) {
+      try { roomRef.current.leave(); } catch {}
+      roomRef.current = null;
+    }
     setConnected(false);
     setGameState(null);
     setSessionId(null);

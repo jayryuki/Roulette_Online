@@ -1,5 +1,3 @@
-// apps/web/src/components/ChatBox.tsx
-
 import { useState, useRef, useEffect } from 'react';
 
 interface ChatMessage {
@@ -30,18 +28,36 @@ export default function ChatBox({ messages, onSend }: ChatBoxProps) {
   };
 
   return (
-    <div className="bg-gray-800 rounded-xl flex flex-col h-full">
-      <h3 className="text-sm font-semibold text-gray-300 p-3 pb-1">Chat</h3>
-      <div className="flex-1 overflow-y-auto p-3 pt-1 space-y-1 min-h-[80px] max-h-[200px]">
+    <div style={{
+      background: 'var(--surface-panel)',
+      borderRadius: '10px',
+      display: 'flex',
+      flexDirection: 'column',
+      height: '100%',
+      border: '1px solid var(--border-subtle)',
+    }}>
+      <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', padding: '0.75rem 0.75rem 0.25rem' }}>
+        Chat
+      </div>
+      <div style={{
+        flex: 1,
+        overflowY: 'auto',
+        padding: '0.5rem 0.75rem',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '0.25rem',
+        minHeight: '60px',
+        maxHeight: '140px',
+      }}>
         {messages.map((msg, i) => (
-          <div key={i} className="text-xs">
-            <span className="text-blue-400 font-semibold">{msg.senderName}: </span>
-            <span className="text-gray-300">{msg.text}</span>
+          <div key={i} style={{ fontSize: '0.75rem' }}>
+            <span style={{ color: 'var(--accent-warm)', fontWeight: 600 }}>{msg.senderName}: </span>
+            <span style={{ color: 'var(--text-secondary)' }}>{msg.text}</span>
           </div>
         ))}
         <div ref={bottomRef} />
       </div>
-      <div className="flex gap-1 p-2 pt-0">
+      <div style={{ display: 'flex', gap: '0.375rem', padding: '0.5rem' }}>
         <input
           type="text"
           value={text}
@@ -49,11 +65,31 @@ export default function ChatBox({ messages, onSend }: ChatBoxProps) {
           onKeyDown={e => e.key === 'Enter' && handleSend()}
           maxLength={200}
           placeholder="Chat..."
-          className="flex-1 px-2 py-1 bg-gray-700 border border-gray-600 rounded text-sm text-white placeholder-gray-500 focus:outline-none focus:border-blue-500"
+          style={{
+            flex: 1,
+            padding: '0.375rem 0.625rem',
+            borderRadius: '6px',
+            border: '1px solid var(--border-subtle)',
+            background: 'var(--surface-panel-raised)',
+            color: 'var(--text-primary)',
+            fontSize: '0.8125rem',
+            outline: 'none',
+            fontFamily: "'Inter', sans-serif",
+          }}
         />
         <button
           onClick={handleSend}
-          className="px-2 py-1 bg-blue-600 hover:bg-blue-500 text-white text-xs rounded"
+          style={{
+            padding: '0.375rem 0.625rem',
+            background: 'var(--accent-warm)',
+            color: '#ffffff',
+            border: 'none',
+            borderRadius: '6px',
+            fontSize: '0.75rem',
+            fontWeight: 600,
+            cursor: 'pointer',
+            fontFamily: "'Inter', sans-serif",
+          }}
         >
           Send
         </button>

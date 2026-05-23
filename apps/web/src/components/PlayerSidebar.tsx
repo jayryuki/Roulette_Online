@@ -1,5 +1,3 @@
-// apps/web/src/components/PlayerSidebar.tsx
-
 import { CHIP_COLORS } from '@roulette/game-core';
 import type { PlayerData } from '../types';
 import HotColdPanel from './HotColdPanel';
@@ -13,60 +11,95 @@ interface PlayerSidebarProps {
   lastResults: string[];
   chatMessages: any[];
   onSendChat: (text: string) => void;
-  onToggleReady: () => void;
   onSwapColor: (index: number) => void;
-  onStartRound: () => void;
   takenColors: Set<number>;
 }
 
 export default function PlayerSidebar({
   players, sessionId, hostPlayerId, phase, lastResults, chatMessages,
-  onSendChat, onToggleReady, onSwapColor, onStartRound, takenColors,
+  onSendChat, onSwapColor, takenColors,
 }: PlayerSidebarProps) {
   const playerList = Array.from(players.values()).sort((a, b) => a.seatIndex - b.seatIndex);
   const myPlayer = sessionId ? players.get(sessionId) : null;
 
   return (
-    <div className="flex flex-col gap-3 h-full">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', height: '100%' }}>
       {/* Players panel */}
-      <div className="bg-gray-800 rounded-xl p-3">
-        <h3 className="text-sm font-semibold text-gray-300 mb-2">Players</h3>
-        <div className="space-y-1.5 max-h-48 overflow-y-auto">
+      <div style={{
+        background: 'var(--surface-panel)',
+        borderRadius: '10px',
+        padding: '0.75rem',
+        border: '1px solid var(--border-subtle)',
+      }}>
+        <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.5rem' }}>
+          Players
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', maxHeight: '160px', overflowY: 'auto' }}>
           {playerList.map(p => {
             const color = CHIP_COLORS.find(c => c.index === p.chipColor);
+            const isMe = p.playerId === sessionId;
             return (
-              <div key={p.playerId} className={`flex items-center gap-2 px-2 py-1 rounded ${p.playerId === sessionId ? 'bg-gray-700' : ''}`}>
-                <div
-                  className="w-3 h-3 rounded-full flex-shrink-0"
-                  style={{ backgroundColor: color?.hex ?? '#888' }}
-                />
-                <span className="text-sm text-white flex-1 truncate">
+              <div key={p.playerId} style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                padding: '0.25rem 0.5rem',
+                borderRadius: '6px',
+                background: isMe ? 'var(--surface-panel-raised)' : 'transparent',
+              }}>
+                <div style={{
+                  width: '10px',
+                  height: '10px',
+                  borderRadius: '50%',
+                  backgroundColor: color?.hex ?? '#888',
+                  flexShrink: 0,
+                }} />
+                <span style={{
+                  fontSize: '0.8125rem',
+                  color: 'var(--text-primary)',
+                  flex: 1,
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                  fontWeight: isMe ? 600 : 400,
+                }}>
                   {p.displayName}
-                  {p.isHost && ' (Host)'}
+                  {p.isHost && <span style={{ color: 'var(--accent-warm)', marginLeft: '0.25rem', fontSize: '0.6875rem' }}>H</span>}
                 </span>
-                <span className="text-xs text-green-400 font-mono">${p.bankroll}</span>
-                {!p.isReady && phase === 'LOBBY' && (
-                  <span className="text-xs text-yellow-400">Not ready</span>
-                )}
+                <span style={{
+                  fontSize: '0.6875rem',
+                  color: 'var(--success)',
+                  fontFamily: "'Inter', sans-serif",
+                  fontWeight: 600,
+                }}>
+                  ${p.bankroll}
+                </span>
               </div>
             );
           })}
         </div>
 
-        {/* Color swapper (for my player) */}
-        {myPlayer && phase === 'LOBBY' && (
-          <div className="mt-2 pt-2 border-t border-gray-700">
-            <p className="text-xs text-gray-400 mb-1">Chip Color</p>
-            <div className="flex gap-1 flex-wrap">
+        {/* Color swapper */}
+        {myPlayer && (
+          <div style={{ marginTop: '0.5rem', paddingTop: '0.5rem', borderTop: '1px solid var(--rule-subtle)' }}>
+            <div style={{ fontSize: '0.6875rem', color: 'var(--text-muted)', marginBottom: '0.375rem' }}>Chip Color</div>
+            <div style={{ display: 'flex', gap: '0.25rem', flexWrap: 'wrap' }}>
               {CHIP_COLORS.map(c => (
                 <button
                   key={c.index}
                   onClick={() => onSwapColor(c.index)}
                   disabled={takenColors.has(c.index) && c.index !== myPlayer.chipColor}
-                  className={`w-6 h-6 rounded-full border-2 transition ${
-                    c.index === myPlayer.chipColor ? 'border-white scale-110' : 'border-transparent'
-                  } disabled:opacity-30 disabled:cursor-not-allowed`}
-                  style={{ backgroundColor: c.hex }}
+                  style={{
+                    width: '20px',
+                    height: '20px',
+                    borderRadius: '50%',
+                    border: c.index === myPlayer.chipColor ? '2px solid var(--accent-warm)' : '2px solid transparent',
+                    backgroundColor: c.hex,
+                    cursor: 'pointer',
+                    opacity: (takenColors.has(c.index) && c.index !== myPlayer.chipColor) ? 0.3 : 1,
+                    transition: 'transform 80ms',
+                    transform: c.index === myPlayer.chipColor ? 'scale(1.15)' : 'scale(1)',
+                  }}
                   title={c.name}
                 />
               ))}
@@ -75,35 +108,11 @@ export default function PlayerSidebar({
         )}
       </div>
 
-      {/* Hot/Cold numbers */}
+      {/* Hot/Cold */}
       <HotColdPanel lastResults={lastResults} />
 
-      {/* Ready button (lobby) */}
-      {phase === 'LOBBY' && myPlayer && (
-        <button
-          onClick={onToggleReady}
-          className={`w-full py-2 rounded-lg font-semibold text-sm transition ${
-            myPlayer.isReady
-              ? 'bg-yellow-600 hover:bg-yellow-500 text-white'
-              : 'bg-green-600 hover:bg-green-500 text-white'
-          }`}
-        >
-          {myPlayer.isReady ? 'Not Ready' : 'Ready'}
-        </button>
-      )}
-
-      {/* Start button (host) */}
-      {myPlayer?.isHost && (phase === 'LOBBY' || phase === 'ROUND_END') && (
-        <button
-          onClick={onStartRound}
-          className="w-full py-2 bg-yellow-500 hover:bg-yellow-400 text-gray-900 rounded-lg font-bold text-sm"
-        >
-          Start Round
-        </button>
-      )}
-
       {/* Chat */}
-      <div className="flex-1 min-h-0">
+      <div style={{ flex: 1, minHeight: 0 }}>
         <ChatBox messages={chatMessages} onSend={onSendChat} />
       </div>
     </div>

@@ -1,5 +1,3 @@
-// apps/web/src/components/BettingGrid.tsx
-
 import { useMemo } from 'react';
 import type { ChipData, PlayerData } from '../types';
 import { CHIP_COLORS } from '@roulette/game-core';
@@ -16,14 +14,28 @@ interface BettingGridProps {
 
 const RED_NUMBERS = new Set([1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36]);
 
-function numberBg(n: number): string {
-  if (n === 0 || n === 37) return 'bg-green-700';
-  return RED_NUMBERS.has(n) ? 'bg-red-700' : 'bg-gray-900';
+function numColor(n: number): string {
+  if (n === 0 || n === 37) return 'var(--roulette-green)';
+  return RED_NUMBERS.has(n) ? 'var(--roulette-red)' : 'var(--roulette-black)';
 }
 
 function displayNum(n: number): string {
   return n === 37 ? '00' : String(n);
 }
+
+const cellStyle: React.CSSProperties = {
+  position: 'relative',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  color: '#ffffff',
+  fontWeight: 700,
+  cursor: 'pointer',
+  borderRadius: '3px',
+  transition: 'filter 80ms',
+  border: '1px solid rgba(255,255,255,0.15)',
+  userSelect: 'none',
+};
 
 export default function BettingGrid({
   chips, players, phase, sessionId, selectedAmount, onPlaceBet, onRemoveBet,
@@ -54,14 +66,25 @@ export default function BettingGrid({
     const cellChips = chipMap.get(betType);
     if (!cellChips || cellChips.length === 0) return null;
     return (
-      <div className="absolute inset-0 flex flex-wrap items-center justify-center pointer-events-none gap-0.5 p-0.5">
+      <div style={{ position: 'absolute', inset: 0, display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none', gap: '1px', padding: '1px' }}>
         {cellChips.map((chip, i) => {
           const color = CHIP_COLORS.find(c => c.index === chip.chipColor);
           return (
             <div
               key={i}
-              className="w-5 h-5 rounded-full border-2 border-white text-[8px] flex items-center justify-center font-bold shadow-sm"
-              style={{ backgroundColor: color?.hex ?? '#888' }}
+              style={{
+                width: '14px',
+                height: '14px',
+                borderRadius: '50%',
+                border: '2px solid white',
+                fontSize: '6px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontWeight: 700,
+                backgroundColor: color?.hex ?? '#888',
+                boxShadow: '0 1px 2px rgba(0,0,0,0.3)',
+              }}
               title={`${players.get(chip.playerId)?.displayName}: $${chip.amount}`}
             >
               {chip.amount}
@@ -72,48 +95,60 @@ export default function BettingGrid({
     );
   };
 
-  // Build number grid rows: 3 columns per row (1-3, 4-6, ..., 34-36)
-  const numberRows: number[][] = [];
-  for (let row = 0; row < 12; row++) {
-    numberRows.push([row * 3 + 1, row * 3 + 2, row * 3 + 3]);
-  }
+  // Traditional roulette layout: 3 columns, 12 rows
+  // Numbers arranged as: 3,6,9,...,36 | 2,5,8,...,35 | 1,4,7,...,34
+  const col3 = Array.from({ length: 12 }, (_, i) => i * 3 + 3); // rightmost
+  const col2 = Array.from({ length: 12 }, (_, i) => i * 3 + 2); // middle
+  const col1 = Array.from({ length: 12 }, (_, i) => i * 3 + 1); // leftmost
+
+  const numCellSize = { width: '32px', height: '22px', fontSize: '10px' };
 
   return (
-    <div className="select-none">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', userSelect: 'none' }}>
       {/* 0 and 00 */}
-      <div className="grid grid-cols-2 gap-0.5 mb-0.5">
+      <div style={{ display: 'flex', gap: '2px' }}>
         <div
           onClick={() => handleNumberClick(0)}
-          className="relative bg-green-700 hover:bg-green-600 cursor-pointer rounded py-2 flex items-center justify-center text-white font-bold text-sm"
+          onMouseEnter={(e) => { e.currentTarget.style.filter = 'brightness(1.3)'; }}
+          onMouseLeave={(e) => { e.currentTarget.style.filter = ''; }}
+          style={{ ...cellStyle, ...numCellSize, flex: 1, backgroundColor: numColor(0), height: '24px' }}
         >
           0
           {renderChipsOnCell('straight_0')}
         </div>
         <div
           onClick={() => handleNumberClick(37)}
-          className="relative bg-green-700 hover:bg-green-600 cursor-pointer rounded py-2 flex items-center justify-center text-white font-bold text-sm"
+          onMouseEnter={(e) => { e.currentTarget.style.filter = 'brightness(1.3)'; }}
+          onMouseLeave={(e) => { e.currentTarget.style.filter = ''; }}
+          style={{ ...cellStyle, ...numCellSize, flex: 1, backgroundColor: numColor(37), height: '24px' }}
         >
           00
           {renderChipsOnCell('straight_37')}
         </div>
       </div>
 
-      {/* Number grid */}
-      <div className="grid grid-cols-3 gap-0.5 mb-0.5">
-        {numberRows.flat().map(num => (
-          <div
-            key={num}
-            onClick={() => handleNumberClick(num)}
-            className={`relative ${numberBg(num)} hover:brightness-125 cursor-pointer rounded aspect-square flex items-center justify-center text-white font-bold text-sm transition`}
-          >
-            {displayNum(num)}
-            {renderChipsOnCell(`straight_${num}`)}
+      {/* Number grid: 12 rows x 3 columns (traditional layout) */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
+        {Array.from({ length: 12 }, (_, row) => (
+          <div key={row} style={{ display: 'flex', gap: '1px' }}>
+            {[col1[row], col2[row], col3[row]].map(num => (
+              <div
+                key={num}
+                onClick={() => handleNumberClick(num)}
+                onMouseEnter={(e) => { e.currentTarget.style.filter = 'brightness(1.3)'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.filter = ''; }}
+                style={{ ...cellStyle, ...numCellSize, backgroundColor: numColor(num), flex: 1 }}
+              >
+                {displayNum(num)}
+                {renderChipsOnCell(`straight_${num}`)}
+              </div>
+            ))}
           </div>
         ))}
       </div>
 
-      {/* Outside bets */}
-      <div className="grid grid-cols-3 gap-0.5 mb-0.5">
+      {/* Dozen bets */}
+      <div style={{ display: 'flex', gap: '2px' }}>
         {[
           { label: '1st 12', betType: 'dozen_1' },
           { label: '2nd 12', betType: 'dozen_2' },
@@ -122,7 +157,17 @@ export default function BettingGrid({
           <div
             key={betType}
             onClick={() => handleOutsideBet(betType)}
-            className="relative bg-gray-700 hover:bg-gray-600 cursor-pointer rounded py-1.5 flex items-center justify-center text-white text-xs font-semibold"
+            onMouseEnter={(e) => { e.currentTarget.style.filter = 'brightness(1.2)'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.filter = ''; }}
+            style={{
+              ...cellStyle,
+              flex: 1,
+              backgroundColor: 'var(--surface-panel-raised)',
+              color: 'var(--text-primary)',
+              fontSize: '9px',
+              height: '22px',
+              fontWeight: 600,
+            }}
           >
             {label}
             {renderChipsOnCell(betType)}
@@ -130,23 +175,30 @@ export default function BettingGrid({
         ))}
       </div>
 
-      <div className="grid grid-cols-6 gap-0.5">
+      {/* Even money bets */}
+      <div style={{ display: 'flex', gap: '2px' }}>
         {[
-          { label: '1-18', betType: 'low' },
-          { label: 'EVEN', betType: 'even' },
-          { label: 'RED', betType: 'red' },
-          { label: 'BLK', betType: 'black' },
-          { label: 'ODD', betType: 'odd' },
-          { label: '19-36', betType: 'high' },
-        ].map(({ label, betType }) => (
+          { label: '1-18', betType: 'low', bg: 'var(--surface-panel-raised)', fg: 'var(--text-primary)' },
+          { label: 'EVEN', betType: 'even', bg: 'var(--surface-panel-raised)', fg: 'var(--text-primary)' },
+          { label: 'RED', betType: 'red', bg: 'var(--roulette-red)', fg: '#fff' },
+          { label: 'BLK', betType: 'black', bg: 'var(--roulette-black)', fg: '#fff' },
+          { label: 'ODD', betType: 'odd', bg: 'var(--surface-panel-raised)', fg: 'var(--text-primary)' },
+          { label: '19-36', betType: 'high', bg: 'var(--surface-panel-raised)', fg: 'var(--text-primary)' },
+        ].map(({ label, betType, bg, fg }) => (
           <div
             key={betType}
             onClick={() => handleOutsideBet(betType)}
-            className={`relative ${
-              betType === 'red' ? 'bg-red-700 hover:bg-red-600' :
-              betType === 'black' ? 'bg-gray-900 hover:bg-gray-800' :
-              'bg-gray-700 hover:bg-gray-600'
-            } cursor-pointer rounded py-1.5 flex items-center justify-center text-white text-xs font-semibold`}
+            onMouseEnter={(e) => { e.currentTarget.style.filter = 'brightness(1.2)'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.filter = ''; }}
+            style={{
+              ...cellStyle,
+              flex: 1,
+              backgroundColor: bg,
+              color: fg,
+              fontSize: '9px',
+              height: '22px',
+              fontWeight: 600,
+            }}
           >
             {label}
             {renderChipsOnCell(betType)}

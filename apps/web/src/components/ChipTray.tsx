@@ -1,5 +1,3 @@
-// apps/web/src/components/ChipTray.tsx
-
 interface ChipTrayProps {
   selectedAmount: number;
   onSelectAmount: (amount: number) => void;
@@ -9,41 +7,73 @@ interface ChipTrayProps {
 
 const DENOMINATIONS = [1, 5, 25, 100, 500];
 
-const CHIP_STYLES: Record<number, string> = {
-  1: 'bg-white text-gray-900 border-gray-300',
-  5: 'bg-red-600 text-white border-red-400',
-  25: 'bg-green-600 text-white border-green-400',
-  100: 'bg-gray-800 text-white border-gray-600',
-  500: 'bg-purple-700 text-white border-purple-400',
+const CHIP_STYLES: Record<number, { bg: string; text: string; border: string }> = {
+  1:   { bg: '#ffffff', text: '#2B2926', border: '#D9D2C8' },
+  5:   { bg: 'var(--roulette-red)', text: '#ffffff', border: '#c45a5a' },
+  25:  { bg: 'var(--roulette-green)', text: '#ffffff', border: '#5a9e6e' },
+  100: { bg: 'var(--roulette-black)', text: '#ffffff', border: '#4a4a52' },
+  500: { bg: 'var(--accent-warm)', text: '#ffffff', border: '#B85C3A' },
 };
 
 export default function ChipTray({ selectedAmount, onSelectAmount, onClearBets, canBet }: ChipTrayProps) {
   return (
-    <div className="flex items-center gap-3 bg-gray-800 rounded-xl p-3">
-      <div className="flex gap-2">
-        {DENOMINATIONS.map(denom => (
-          <button
-            key={denom}
-            onClick={() => onSelectAmount(denom)}
-            disabled={!canBet}
-            className={`w-12 h-12 rounded-full border-2 font-bold text-sm transition-all ${
-              CHIP_STYLES[denom]
-            } ${
-              selectedAmount === denom
-                ? 'ring-2 ring-yellow-400 scale-110 shadow-lg'
-                : 'hover:scale-105'
-            } disabled:opacity-50 disabled:cursor-not-allowed`}
-          >
-            ${denom}
-          </button>
-        ))}
+    <div style={{
+      display: 'flex',
+      alignItems: 'center',
+      gap: '0.5rem',
+      background: 'var(--surface-panel)',
+      borderRadius: '10px',
+      padding: '0.5rem 0.75rem',
+      border: '1px solid var(--border-subtle)',
+    }}>
+      <div style={{ display: 'flex', gap: '0.375rem' }}>
+        {DENOMINATIONS.map(denom => {
+          const style = CHIP_STYLES[denom];
+          const isSelected = selectedAmount === denom;
+          return (
+            <button
+              key={denom}
+              onClick={() => onSelectAmount(denom)}
+              disabled={!canBet}
+              style={{
+                width: '36px',
+                height: '36px',
+                borderRadius: '50%',
+                border: `2px solid ${style.border}`,
+                backgroundColor: style.bg,
+                color: style.text,
+                fontWeight: 700,
+                fontSize: '10px',
+                cursor: canBet ? 'pointer' : 'not-allowed',
+                transition: 'transform 80ms, box-shadow 80ms',
+                transform: isSelected ? 'scale(1.15)' : 'scale(1)',
+                boxShadow: isSelected ? '0 0 0 2px var(--accent-warm), 0 2px 8px rgba(0,0,0,0.2)' : 'none',
+                opacity: canBet ? 1 : 0.5,
+                outline: 'none',
+              }}
+            >
+              ${denom}
+            </button>
+          );
+        })}
       </div>
       <button
         onClick={onClearBets}
         disabled={!canBet}
-        className="px-4 py-2 bg-red-700 hover:bg-red-600 disabled:bg-gray-700 text-white rounded-lg text-sm font-semibold transition"
+        style={{
+          padding: '0.375rem 0.75rem',
+          background: 'var(--danger)',
+          color: '#ffffff',
+          border: 'none',
+          borderRadius: '6px',
+          fontSize: '0.75rem',
+          fontWeight: 600,
+          cursor: canBet ? 'pointer' : 'not-allowed',
+          opacity: canBet ? 1 : 0.5,
+          fontFamily: "'Inter', sans-serif",
+        }}
       >
-        Clear Bets
+        Clear
       </button>
     </div>
   );

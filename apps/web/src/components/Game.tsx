@@ -1,13 +1,13 @@
-// apps/web/src/components/Game.tsx
-
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import { useRouletteRoom } from '../hooks/useRouletteRoom';
-import Wheel3D from './Wheel3D';
+import { Button } from './common/Button';
+import { ThemeToggle } from './common/ThemeToggle';
+import Wheel2D from './Wheel2D';
 import BettingGrid from './BettingGrid';
 import ChipTray from './ChipTray';
 import PlayerSidebar from './PlayerSidebar';
-import { CHIP_COLORS } from '@roulette/game-core';
+import { displayLabel } from '@roulette/game-core';
 
 export default function Game() {
   const { roomCode } = useParams<{ roomCode: string }>();
@@ -17,31 +17,37 @@ export default function Game() {
 
   const { gameState, connected, error, joinRoom, send, leave, sessionId } = useRouletteRoom();
   const [selectedAmount, setSelectedAmount] = useState(25);
-  const [joined, setJoined] = useState(false);
+  const hasJoinedRef = useRef(false);
 
-  // All hooks must be called before any early returns
   const roundResult = useMemo(() => {
     if (!gameState?.roundResult) return null;
     try { return JSON.parse(gameState.roundResult); } catch { return null; }
   }, [gameState?.roundResult]);
 
   useEffect(() => {
-    if (roomCode && !joined) {
+    if (roomCode && !hasJoinedRef.current) {
+      hasJoinedRef.current = true;
       joinRoom(roomCode, displayName).then(room => {
         if (!room) navigate('/');
-        setJoined(true);
       });
     }
-  }, [roomCode]);
+  }, [roomCode, joinRoom, displayName, navigate]);
 
   useEffect(() => {
-    return () => { leave(); };
-  }, []);
+    const handleBeforeUnload = () => { leave(); };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => { window.removeEventListener('beforeunload', handleBeforeUnload); };
+  }, [leave]);
+
+  const handleLeave = useCallback(() => {
+    leave();
+    navigate('/');
+  }, [leave, navigate]);
 
   if (!gameState || !connected) {
     return (
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center text-white">
-        <p>Connecting to room {roomCode}...</p>
+      <div style={{ height: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--surface-table)' }}>
+        <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.875rem' }}>Connecting to room {roomCode}...</div>
       </div>
     );
   }
@@ -58,63 +64,111 @@ export default function Game() {
 
   const spinning = phase === 'SPINNING';
   const targetNumber = gameState.winningNumber >= 0 ? gameState.winningNumber : null;
+  const showWinning = phase === 'SETTLEMENT' && targetNumber !== null;
+  const winningDisplay = targetNumber !== null ? displayLabel(targetNumber) : '';
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white flex flex-col">
-      {/* Header */}
-      <header className="bg-gray-800 border-b border-gray-700 px-4 py-2 flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <h1 className="text-lg font-bold">Roulette</h1>
-          <span className="text-sm text-gray-400 font-mono">{gameState.roomCode}</span>
-        </div>
-        <div className="flex items-center gap-3">
+    <div style={{
+      height: '100dvh',
+      display: 'flex',
+      flexDirection: 'column',
+      background: 'var(--surface-table)',
+      overflow: 'hidden',
+    }}>
+      {/* Top bar */}
+      <div style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: '0.5rem 1rem',
+        background: 'rgba(0,0,0,0.2)',
+        flexShrink: 0,
+      }}>
+        <Button variant="ghost" onClick={handleLeave} style={{ color: 'rgba(255,255,255,0.7)' }}>
+          &larr; Leave
+        </Button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          {/* Timer — always visible during betting */}
           {phase === 'BETTING' && (
-            <span className="text-sm font-mono bg-gray-700 px-2 py-0.5 rounded">
-              {gameState.timerSeconds}s
+            <span style={{
+              fontFamily: "'Inter', sans-serif",
+              fontWeight: 700,
+              fontSize: '1rem',
+              color: 'rgba(255,255,255,0.95)',
+              background: 'rgba(0,0,0,0.3)',
+              padding: '0.25rem 0.625rem',
+              borderRadius: '6px',
+              minWidth: '2.5rem',
+              textAlign: 'center',
+            }}>
+              {gameState.timerSeconds}
             </span>
           )}
-          <span className={`text-sm font-semibold px-2 py-0.5 rounded ${
-            phase === 'SPINNING' ? 'bg-yellow-600' :
-            phase === 'SETTLEMENT' ? 'bg-green-600' :
-            'bg-gray-600'
-          }`}>
-            {phase}
+          <div style={{
+            fontFamily: "'Inter', sans-serif",
+            fontWeight: 600,
+            letterSpacing: '0.15em',
+            color: 'rgba(255,255,255,0.9)',
+            fontSize: '0.875rem',
+          }}>
+            {gameState.roomCode}
+          </div>
+          {/* Phase badge */}
+          <span style={{
+            fontSize: '0.625rem',
+            textTransform: 'uppercase',
+            letterSpacing: '0.08em',
+            fontWeight: 600,
+            padding: '0.25rem 0.5rem',
+            borderRadius: '4px',
+            background: phase === 'BETTING' ? 'rgba(90,158,110,0.25)' :
+                        phase === 'SPINNING' ? 'rgba(196,165,116,0.25)' :
+                        phase === 'SETTLEMENT' ? 'rgba(90,158,110,0.25)' :
+                        'rgba(255,255,255,0.08)',
+            color: phase === 'BETTING' ? '#5ae07a' :
+                   phase === 'SPINNING' ? 'var(--accent-warm)' :
+                   phase === 'SETTLEMENT' ? 'var(--success)' :
+                   'rgba(255,255,255,0.4)',
+          }}>
+            {phase === 'BETTING' ? 'Place Bets' : phase === 'SPINNING' ? 'Spinning' : phase === 'SETTLEMENT' ? 'Result' : phase}
           </span>
-          <button
-            onClick={() => { leave(); navigate('/'); }}
-            className="text-sm text-red-400 hover:text-red-300"
-          >
-            Leave
-          </button>
+          <ThemeToggle />
         </div>
-      </header>
+      </div>
 
       {/* Main content */}
-      <div className="flex-1 flex flex-col lg:flex-row gap-3 p-3 max-w-7xl mx-auto w-full">
-        {/* Wheel + Grid */}
-        <div className="flex-1 flex flex-col gap-3 min-w-0">
+      <div style={{
+        flex: 1,
+        display: 'flex',
+        gap: '0.75rem',
+        padding: '0.5rem',
+        minHeight: 0,
+        overflow: 'hidden',
+      }}>
+        {/* Left: Wheel + Grid + Chips */}
+        <div style={{
+          flex: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: '0.5rem',
+          minHeight: 0,
+        }}>
           {/* Wheel */}
-          <Wheel3D targetNumber={targetNumber} spinning={spinning} />
+          <Wheel2D targetNumber={targetNumber} spinning={spinning} />
 
-          {/* Winning number display */}
-          {phase === 'SETTLEMENT' && targetNumber !== null && (
-            <div className="text-center py-2 bg-green-800 rounded-lg">
-              <span className="text-2xl font-bold">
-                Winning: {targetNumber === 37 ? '00' : targetNumber}
+          {/* Winning number banner */}
+          {showWinning && (
+            <div style={{
+              textAlign: 'center',
+              padding: '0.375rem 1.5rem',
+              background: 'rgba(0,0,0,0.4)',
+              borderRadius: '8px',
+              animation: 'fadeInUp 0.3s ease-out',
+            }}>
+              <span style={{ fontSize: '1.25rem', fontWeight: 700, color: '#ffffff' }}>
+                {winningDisplay}
               </span>
-            </div>
-          )}
-
-          {/* Round result summary */}
-          {roundResult && phase === 'SETTLEMENT' && (
-            <div className="bg-gray-800 rounded-xl p-3 text-sm max-h-36 overflow-y-auto">
-              <h3 className="font-semibold mb-1">Results</h3>
-              {roundResult.results?.map((r: any, i: number) => (
-                <div key={i} className={`flex justify-between ${r.won ? 'text-green-400' : 'text-red-400'}`}>
-                  <span>{r.name} — {r.betType}</span>
-                  <span className="font-mono">{r.won ? `+$${r.payout - r.amount}` : `-$${r.amount}`}</span>
-                </div>
-              ))}
             </div>
           )}
 
@@ -129,27 +183,52 @@ export default function Game() {
             onRemoveBet={(chipIndex) => send('remove-bet', { chipIndex })}
           />
 
-          {/* Chip tray + Spin Now */}
-          <div className="flex items-center gap-3">
+          {/* Chip tray */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <ChipTray
               selectedAmount={selectedAmount}
               onSelectAmount={setSelectedAmount}
               onClearBets={() => send('clear-bets')}
               canBet={canBet}
             />
-            {myPlayer?.isHost && phase === 'BETTING' && (
-              <button
-                onClick={() => send('spin-now')}
-                className="px-6 py-3 bg-yellow-500 hover:bg-yellow-400 text-gray-900 rounded-xl font-bold text-sm transition"
-              >
-                Spin Now
-              </button>
-            )}
           </div>
+
+          {/* Round result summary */}
+          {roundResult && phase === 'SETTLEMENT' && (
+            <div style={{
+              background: 'rgba(0,0,0,0.3)',
+              borderRadius: '8px',
+              padding: '0.5rem 0.75rem',
+              fontSize: '0.75rem',
+              maxHeight: '80px',
+              overflowY: 'auto',
+              width: '100%',
+              maxWidth: '400px',
+              animation: 'fadeInUp 0.3s ease-out',
+            }}>
+              {roundResult.results?.map((r: any, i: number) => (
+                <div key={i} style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  color: r.won ? 'var(--success)' : 'var(--danger)',
+                  fontSize: '0.6875rem',
+                }}>
+                  <span>{r.name} — {r.betType}</span>
+                  <span style={{ fontFamily: "'Inter', sans-serif", fontWeight: 600 }}>
+                    {r.won ? `+$${r.payout - r.amount}` : `-$${r.amount}`}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Sidebar */}
-        <div className="w-full lg:w-72 flex-shrink-0">
+        <div style={{
+          width: '240px',
+          flexShrink: 0,
+          overflowY: 'auto',
+        }}>
           <PlayerSidebar
             players={players}
             sessionId={sessionId}
@@ -158,9 +237,7 @@ export default function Game() {
             lastResults={gameState.lastResults || []}
             chatMessages={gameState.chatMessages || []}
             onSendChat={(text) => send('chat', { text })}
-            onToggleReady={() => send('toggle-ready')}
             onSwapColor={(index) => send('swap-color', { targetIndex: index })}
-            onStartRound={() => send('start-round')}
             takenColors={takenColors}
           />
         </div>
