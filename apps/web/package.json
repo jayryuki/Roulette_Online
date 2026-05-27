@@ -9,6 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@games/ui": "workspace:*",
     "@roulette/game-core": "workspace:*",
     "colyseus.js": "^0.16.0",
     "react": "^18.3.0",
