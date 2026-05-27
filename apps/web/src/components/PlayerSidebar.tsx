@@ -13,11 +13,12 @@ interface PlayerSidebarProps {
   onSendChat: (text: string) => void;
   onSwapColor: (index: number) => void;
   takenColors: Set<number>;
+  isMobile?: boolean;
 }
 
 export default function PlayerSidebar({
   players, sessionId, hostPlayerId, phase, lastResults, chatMessages,
-  onSendChat, onSwapColor, takenColors,
+  onSendChat, onSwapColor, takenColors, isMobile = false,
 }: PlayerSidebarProps) {
   const playerList = Array.from(players.values()).sort((a, b) => a.seatIndex - b.seatIndex);
   const myPlayer = sessionId ? players.get(sessionId) : null;
@@ -83,15 +84,15 @@ export default function PlayerSidebar({
         {myPlayer && (
           <div style={{ marginTop: '0.5rem', paddingTop: '0.5rem', borderTop: '1px solid var(--rule-subtle)' }}>
             <div style={{ fontSize: '0.6875rem', color: 'var(--text-muted)', marginBottom: '0.375rem' }}>Chip Color</div>
-            <div style={{ display: 'flex', gap: '0.25rem', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', gap: isMobile ? '0.125rem' : '0.25rem', flexWrap: 'wrap' }}>
               {CHIP_COLORS.map(c => (
                 <button
                   key={c.index}
                   onClick={() => onSwapColor(c.index)}
                   disabled={takenColors.has(c.index) && c.index !== myPlayer.chipColor}
                   style={{
-                    width: '20px',
-                    height: '20px',
+                    width: isMobile ? '44px' : '20px',
+                    height: isMobile ? '44px' : '20px',
                     borderRadius: '50%',
                     border: c.index === myPlayer.chipColor ? '2px solid var(--accent-warm)' : '2px solid transparent',
                     backgroundColor: c.hex,
@@ -99,6 +100,7 @@ export default function PlayerSidebar({
                     opacity: (takenColors.has(c.index) && c.index !== myPlayer.chipColor) ? 0.3 : 1,
                     transition: 'transform 80ms',
                     transform: c.index === myPlayer.chipColor ? 'scale(1.15)' : 'scale(1)',
+                    flexShrink: 0,
                   }}
                   title={c.name}
                 />

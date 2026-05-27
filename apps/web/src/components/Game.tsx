@@ -247,7 +247,7 @@ export default function Game({ isSolo = false }: GameProps) {
             </button>
           )}
 
-          <ThemeToggle />
+          <ThemeToggle style={isMobile ? { minHeight: '44px', minWidth: '44px' } : undefined} />
         </div>
       </div>
 
@@ -469,6 +469,7 @@ export default function Game({ isSolo = false }: GameProps) {
                 onSendChat={(text) => send('chat', { text })}
                 onSwapColor={(index) => send('swap-color', { targetIndex: index })}
                 takenColors={takenColors}
+                isMobile={isMobile}
               />
             </div>
           )
@@ -615,6 +616,7 @@ export default function Game({ isSolo = false }: GameProps) {
                   onSendChat={(text) => send('chat', { text })}
                   onSwapColor={(index) => send('swap-color', { targetIndex: index })}
                   takenColors={takenColors}
+                  isMobile={isMobile}
                 />
               )}
             </div>

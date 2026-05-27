@@ -75,6 +75,7 @@ export default function ChatBox({ messages, onSend }: ChatBoxProps) {
             fontSize: '0.8125rem',
             outline: 'none',
             fontFamily: "'Inter', sans-serif",
+            minHeight: '44px',
           }}
         />
         <button
@@ -89,6 +90,8 @@ export default function ChatBox({ messages, onSend }: ChatBoxProps) {
             fontWeight: 600,
             cursor: 'pointer',
             fontFamily: "'Inter', sans-serif",
+            minHeight: '44px',
+            minWidth: '44px',
           }}
         >
           Send

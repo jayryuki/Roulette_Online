@@ -152,7 +152,7 @@ export default function Lobby() {
       <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'center' }}>
         <Button size="lg" onClick={handleCreateRoom} disabled={loading} style={isMobile ? { minHeight: '44px' } : undefined}>Create Room</Button>
         <Button size="lg" variant="secondary" onClick={handlePlaySolo} disabled={loading} style={isMobile ? { minHeight: '44px' } : undefined}>Play Solo</Button>
-        <ThemeToggle />
+        <ThemeToggle style={isMobile ? { minHeight: '44px', minWidth: '44px' } : undefined} />
       </div>
 
       {/* Join by code */}
