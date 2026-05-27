@@ -3,6 +3,7 @@ interface ChipTrayProps {
   onSelectAmount: (amount: number) => void;
   onClearBets: () => void;
   canBet: boolean;
+  isMobile?: boolean;
 }
 
 const DENOMINATIONS = [1, 5, 25, 100, 500];
@@ -15,18 +16,19 @@ const CHIP_STYLES: Record<number, { bg: string; text: string; border: string }> 
   500: { bg: 'var(--accent-warm)', text: '#ffffff', border: '#B85C3A' },
 };
 
-export default function ChipTray({ selectedAmount, onSelectAmount, onClearBets, canBet }: ChipTrayProps) {
+export default function ChipTray({ selectedAmount, onSelectAmount, onClearBets, canBet, isMobile = false }: ChipTrayProps) {
+  const chipSize = isMobile ? 44 : 36;
   return (
     <div style={{
       display: 'flex',
       alignItems: 'center',
-      gap: '0.5rem',
+      gap: isMobile ? '0.25rem' : '0.5rem',
       background: 'var(--surface-panel)',
       borderRadius: '10px',
-      padding: '0.5rem 0.75rem',
+      padding: isMobile ? '0.375rem 0.5rem' : '0.5rem 0.75rem',
       border: '1px solid var(--border-subtle)',
     }}>
-      <div style={{ display: 'flex', gap: '0.375rem' }}>
+      <div style={{ display: 'flex', gap: isMobile ? '0.25rem' : '0.375rem' }}>
         {DENOMINATIONS.map(denom => {
           const style = CHIP_STYLES[denom];
           const isSelected = selectedAmount === denom;
@@ -36,14 +38,14 @@ export default function ChipTray({ selectedAmount, onSelectAmount, onClearBets, 
               onClick={() => onSelectAmount(denom)}
               disabled={!canBet}
               style={{
-                width: '36px',
-                height: '36px',
+                width: `${chipSize}px`,
+                height: `${chipSize}px`,
                 borderRadius: '50%',
                 border: `2px solid ${style.border}`,
                 backgroundColor: style.bg,
                 color: style.text,
                 fontWeight: 700,
-                fontSize: '10px',
+                fontSize: isMobile ? '11px' : '10px',
                 cursor: canBet ? 'pointer' : 'not-allowed',
                 transition: 'transform 80ms, box-shadow 80ms',
                 transform: isSelected ? 'scale(1.15)' : 'scale(1)',
@@ -61,16 +63,17 @@ export default function ChipTray({ selectedAmount, onSelectAmount, onClearBets, 
         onClick={onClearBets}
         disabled={!canBet}
         style={{
-          padding: '0.375rem 0.75rem',
+          padding: isMobile ? '0.5rem 0.75rem' : '0.375rem 0.75rem',
           background: 'var(--danger)',
           color: '#ffffff',
           border: 'none',
           borderRadius: '6px',
-          fontSize: '0.75rem',
+          fontSize: isMobile ? '0.8125rem' : '0.75rem',
           fontWeight: 600,
           cursor: canBet ? 'pointer' : 'not-allowed',
           opacity: canBet ? 1 : 0.5,
           fontFamily: "'Inter', sans-serif",
+          minHeight: isMobile ? '44px' : undefined,
         }}
       >
         Clear

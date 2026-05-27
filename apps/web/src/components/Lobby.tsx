@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button, ThemeToggle } from '@games/ui';
 import { useRouletteRoom } from '../hooks/useRouletteRoom';
+import { useIsMobile } from '../hooks/useIsMobile';
 
 interface RoomInfo {
   roomId: string;
@@ -28,6 +29,7 @@ export default function Lobby() {
   const [loading, setLoading] = useState(false);
   const [rooms, setRooms] = useState<RoomInfo[]>([]);
   const [error, setError] = useState('');
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     fetch('/api/rooms?game=roulette')
@@ -93,10 +95,20 @@ export default function Lobby() {
   const activeRooms = rooms.filter(r => r.status !== 'finished');
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '1.5rem', padding: '2rem' }}>
+    <div style={{
+      minHeight: '100vh',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: isMobile ? '1rem' : '1.5rem',
+      padding: isMobile ? '1rem' : '2rem',
+      maxWidth: '100vw',
+      overflowX: 'hidden',
+    }}>
       <h1 style={{
         fontFamily: "'Newsreader', Georgia, serif",
-        fontSize: '3rem',
+        fontSize: isMobile ? '2.25rem' : '3rem',
         fontWeight: 500,
         letterSpacing: '-0.03em',
         color: 'var(--text-primary)',
@@ -106,10 +118,11 @@ export default function Lobby() {
       </h1>
       <p style={{
         color: 'var(--text-secondary)',
-        fontSize: '1.125rem',
+        fontSize: isMobile ? '1rem' : '1.125rem',
         fontStyle: 'italic',
         fontFamily: "'Newsreader', Georgia, serif",
         margin: 0,
+        textAlign: 'center',
       }}>
         Place your bets. Watch the wheel.
       </p>
@@ -123,21 +136,22 @@ export default function Lobby() {
           placeholder="Leave blank for a random name"
           style={{
             flex: 1,
-            padding: '0.5rem 0.75rem',
+            padding: isMobile ? '0.625rem 0.75rem' : '0.5rem 0.75rem',
             borderRadius: '6px',
             border: '1px solid var(--border-subtle)',
             background: 'var(--surface-panel)',
             color: 'var(--text-primary)',
             fontSize: '0.875rem',
             outline: 'none',
+            minHeight: isMobile ? '44px' : undefined,
           }}
         />
       </div>
 
       {/* Action buttons */}
-      <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'center' }}>
-        <Button size="lg" onClick={handleCreateRoom} disabled={loading}>Create Room</Button>
-        <Button size="lg" variant="secondary" onClick={handlePlaySolo} disabled={loading}>Play Solo</Button>
+      <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'center' }}>
+        <Button size="lg" onClick={handleCreateRoom} disabled={loading} style={isMobile ? { minHeight: '44px' } : undefined}>Create Room</Button>
+        <Button size="lg" variant="secondary" onClick={handlePlaySolo} disabled={loading} style={isMobile ? { minHeight: '44px' } : undefined}>Play Solo</Button>
         <ThemeToggle />
       </div>
 
@@ -150,7 +164,7 @@ export default function Lobby() {
           maxLength={6}
           style={{
             flex: 1,
-            padding: '0.5rem 0.75rem',
+            padding: isMobile ? '0.625rem 0.75rem' : '0.5rem 0.75rem',
             borderRadius: '6px',
             border: '1px solid var(--border-subtle)',
             background: 'var(--surface-panel)',
@@ -162,16 +176,17 @@ export default function Lobby() {
             textAlign: 'center',
             textTransform: 'uppercase',
             outline: 'none',
+            minHeight: isMobile ? '44px' : undefined,
           }}
         />
-        <Button size="sm" onClick={handleJoinByCode} disabled={!joinCode.trim() || loading}>Join</Button>
+        <Button size="sm" onClick={handleJoinByCode} disabled={!joinCode.trim() || loading} style={isMobile ? { minHeight: '44px' } : undefined}>Join</Button>
       </div>
 
       {(error || roomError) && <div style={{ color: 'var(--danger)', fontSize: '0.8125rem' }}>{error || roomError}</div>}
 
       {/* Active rooms list */}
       {activeRooms.length > 0 && (
-        <div style={{ width: '100%', maxWidth: '480px', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+        <div style={{ width: '100%', maxWidth: isMobile ? '100%' : '480px', display: 'flex', flexDirection: 'column', gap: '0.5rem', padding: isMobile ? '0 0.5rem' : undefined }}>
           <div style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--text-muted)', fontWeight: 600 }}>
             Active Rooms
           </div>
@@ -183,7 +198,7 @@ export default function Lobby() {
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',
-                padding: '0.75rem 1rem',
+                padding: isMobile ? '0.75rem' : '0.75rem 1rem',
                 borderRadius: '8px',
                 border: '1px solid var(--border-subtle)',
                 background: 'var(--surface-panel)',
@@ -191,6 +206,7 @@ export default function Lobby() {
                 textAlign: 'left',
                 width: '100%',
                 transition: 'border-color 120ms, background 120ms',
+                minHeight: isMobile ? '44px' : undefined,
               }}
               onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--accent-warm)'; e.currentTarget.style.background = 'var(--surface-panel-raised)'; }}
               onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border-subtle)'; e.currentTarget.style.background = 'var(--surface-panel)'; }}

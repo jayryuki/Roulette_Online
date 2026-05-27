@@ -10,6 +10,7 @@ interface BettingGridProps {
   selectedAmount: number;
   onPlaceBet: (betType: string, amount: number) => void;
   onRemoveBet: (chipIndex: number) => void;
+  isMobile?: boolean;
 }
 
 const RED_NUMBERS = new Set([1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36]);
@@ -38,7 +39,7 @@ const cellStyle: React.CSSProperties = {
 };
 
 export default function BettingGrid({
-  chips, players, phase, sessionId, selectedAmount, onPlaceBet, onRemoveBet,
+  chips, players, phase, sessionId, selectedAmount, onPlaceBet, onRemoveBet, isMobile = false,
 }: BettingGridProps) {
   const canBet = phase === 'BETTING' && sessionId != null;
 
@@ -101,7 +102,9 @@ export default function BettingGrid({
   const col2 = Array.from({ length: 12 }, (_, i) => i * 3 + 2); // middle
   const col1 = Array.from({ length: 12 }, (_, i) => i * 3 + 1); // leftmost
 
-  const numCellSize = { width: '32px', height: '22px', fontSize: '10px' };
+  const numCellSize: React.CSSProperties = isMobile
+    ? { width: '100%', height: '32px', fontSize: '11px', minHeight: '32px' }
+    : { width: '32px', height: '22px', fontSize: '10px' };
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', userSelect: 'none' }}>
@@ -111,7 +114,7 @@ export default function BettingGrid({
           onClick={() => handleNumberClick(0)}
           onMouseEnter={(e) => { e.currentTarget.style.filter = 'brightness(1.3)'; }}
           onMouseLeave={(e) => { e.currentTarget.style.filter = ''; }}
-          style={{ ...cellStyle, ...numCellSize, flex: 1, backgroundColor: numColor(0), height: '24px' }}
+          style={{ ...cellStyle, ...numCellSize, flex: 1, backgroundColor: numColor(0), height: isMobile ? '36px' : '24px' }}
         >
           0
           {renderChipsOnCell('straight_0')}
@@ -120,7 +123,7 @@ export default function BettingGrid({
           onClick={() => handleNumberClick(37)}
           onMouseEnter={(e) => { e.currentTarget.style.filter = 'brightness(1.3)'; }}
           onMouseLeave={(e) => { e.currentTarget.style.filter = ''; }}
-          style={{ ...cellStyle, ...numCellSize, flex: 1, backgroundColor: numColor(37), height: '24px' }}
+          style={{ ...cellStyle, ...numCellSize, flex: 1, backgroundColor: numColor(37), height: isMobile ? '36px' : '24px' }}
         >
           00
           {renderChipsOnCell('straight_37')}
@@ -164,8 +167,8 @@ export default function BettingGrid({
               flex: 1,
               backgroundColor: 'var(--surface-panel-raised)',
               color: 'var(--text-primary)',
-              fontSize: '9px',
-              height: '22px',
+              fontSize: isMobile ? '10px' : '9px',
+              height: isMobile ? '36px' : '22px',
               fontWeight: 600,
             }}
           >
@@ -195,8 +198,8 @@ export default function BettingGrid({
               flex: 1,
               backgroundColor: bg,
               color: fg,
-              fontSize: '9px',
-              height: '22px',
+              fontSize: isMobile ? '10px' : '9px',
+              height: isMobile ? '36px' : '22px',
               fontWeight: 600,
             }}
           >

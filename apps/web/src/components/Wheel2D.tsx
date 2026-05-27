@@ -7,9 +7,10 @@ const POCKET_ANGLE = 360 / POCKET_COUNT;
 interface Wheel2DProps {
   targetNumber: number | null;
   spinning: boolean;
+  size?: number;
 }
 
-export default function Wheel2D({ targetNumber, spinning }: Wheel2DProps) {
+export default function Wheel2D({ targetNumber, spinning, size = 280 }: Wheel2DProps) {
   const wheelRef = useRef<SVGGElement>(null);
   const [currentRotation, setCurrentRotation] = useState(0);
   const animRef = useRef<number>(0);
@@ -81,7 +82,6 @@ export default function Wheel2D({ targetNumber, spinning }: Wheel2DProps) {
     };
   }, [spinning, targetNumber]);
 
-  const size = 280;
   const cx = size / 2;
   const cy = size / 2;
   const outerR = size / 2 - 4;

@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import { useRouletteRoom } from '../hooks/useRouletteRoom';
 import { useRouletteSolo } from '../hooks/useRouletteSolo';
+import { useIsMobile } from '../hooks/useIsMobile';
 import { Button, ThemeToggle } from '@games/ui';
 import Wheel2D from './Wheel2D';
 import BettingGrid from './BettingGrid';
@@ -30,6 +31,8 @@ export default function Game({ isSolo = false }: GameProps) {
 
   const [selectedAmount, setSelectedAmount] = useState(25);
   const hasJoinedRef = useRef(false);
+  const isMobile = useIsMobile();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const roundResult = useMemo(() => {
     if (!gameState?.roundResult) return null;
@@ -103,27 +106,29 @@ export default function Game({ isSolo = false }: GameProps) {
       flexDirection: 'column',
       background: 'var(--surface-table)',
       overflow: 'hidden',
+      maxWidth: '100vw',
     }}>
       {/* Top bar */}
       <div style={{
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
-        padding: '0.5rem 1rem',
+        padding: isMobile ? '0.375rem 0.5rem' : '0.5rem 1rem',
         background: 'rgba(0,0,0,0.2)',
         flexShrink: 0,
+        minHeight: isMobile ? '44px' : undefined,
       }}>
-        <Button variant="ghost" onClick={handleLeave} style={{ color: 'rgba(255,255,255,0.7)' }}>
+        <Button variant="ghost" onClick={handleLeave} style={{ color: 'rgba(255,255,255,0.7)', fontSize: isMobile ? '0.8125rem' : undefined, minHeight: isMobile ? '44px' : undefined, padding: isMobile ? '0.25rem 0.5rem' : undefined }}>
           &larr; Leave
         </Button>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '0.375rem' : '0.75rem', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
           {/* Solo: Spin button during betting phase */}
           {isSolo && phase === 'BETTING' && !isGameOver && (
             <button
               onClick={() => send('spin-now')}
               disabled={!canBet || (gameState.chips?.length ?? 0) === 0}
               style={{
-                padding: '0.375rem 1.25rem',
+                padding: isMobile ? '0.5rem 1rem' : '0.375rem 1.25rem',
                 background: 'var(--accent-warm)',
                 color: '#ffffff',
                 border: 'none',
@@ -135,6 +140,7 @@ export default function Game({ isSolo = false }: GameProps) {
                 letterSpacing: '0.05em',
                 opacity: canBet && (gameState.chips?.length ?? 0) > 0 ? 1 : 0.5,
                 transition: 'opacity 120ms',
+                minHeight: isMobile ? '44px' : undefined,
               }}
             >
               SPIN
@@ -163,10 +169,10 @@ export default function Game({ isSolo = false }: GameProps) {
             <div style={{
               fontFamily: "'Inter', sans-serif",
               fontWeight: 700,
-              fontSize: '1rem',
+              fontSize: isMobile ? '0.875rem' : '1rem',
               color: '#ffffff',
               background: 'rgba(0,0,0,0.3)',
-              padding: '0.25rem 0.75rem',
+              padding: isMobile ? '0.25rem 0.5rem' : '0.25rem 0.75rem',
               borderRadius: '6px',
               display: 'flex',
               alignItems: 'center',
@@ -196,24 +202,51 @@ export default function Game({ isSolo = false }: GameProps) {
           )}
 
           {/* Phase badge */}
-          <span style={{
-            fontSize: '0.625rem',
-            textTransform: 'uppercase',
-            letterSpacing: '0.08em',
-            fontWeight: 600,
-            padding: '0.25rem 0.5rem',
-            borderRadius: '4px',
-            background: phase === 'BETTING' ? 'rgba(90,158,110,0.25)' :
-                        phase === 'SPINNING' ? 'rgba(196,165,116,0.25)' :
-                        phase === 'SETTLEMENT' ? 'rgba(90,158,110,0.25)' :
-                        'rgba(255,255,255,0.08)',
-            color: phase === 'BETTING' ? '#5ae07a' :
-                   phase === 'SPINNING' ? 'var(--accent-warm)' :
-                   phase === 'SETTLEMENT' ? 'var(--success)' :
-                   'rgba(255,255,255,0.4)',
-          }}>
-            {phase === 'BETTING' ? 'Place Bets' : phase === 'SPINNING' ? 'Spinning' : phase === 'SETTLEMENT' ? 'Result' : phase}
-          </span>
+          {!isMobile && (
+            <span style={{
+              fontSize: '0.625rem',
+              textTransform: 'uppercase',
+              letterSpacing: '0.08em',
+              fontWeight: 600,
+              padding: '0.25rem 0.5rem',
+              borderRadius: '4px',
+              background: phase === 'BETTING' ? 'rgba(90,158,110,0.25)' :
+                          phase === 'SPINNING' ? 'rgba(196,165,116,0.25)' :
+                          phase === 'SETTLEMENT' ? 'rgba(90,158,110,0.25)' :
+                          'rgba(255,255,255,0.08)',
+              color: phase === 'BETTING' ? '#5ae07a' :
+                     phase === 'SPINNING' ? 'var(--accent-warm)' :
+                     phase === 'SETTLEMENT' ? 'var(--success)' :
+                     'rgba(255,255,255,0.4)',
+            }}>
+              {phase === 'BETTING' ? 'Place Bets' : phase === 'SPINNING' ? 'Spinning' : phase === 'SETTLEMENT' ? 'Result' : phase}
+            </span>
+          )}
+
+          {/* Mobile: sidebar toggle button */}
+          {isMobile && (
+            <button
+              onClick={() => setSidebarOpen(prev => !prev)}
+              style={{
+                width: '44px',
+                height: '44px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                background: 'rgba(255,255,255,0.1)',
+                border: 'none',
+                borderRadius: '8px',
+                color: 'rgba(255,255,255,0.8)',
+                fontSize: '1.25rem',
+                cursor: 'pointer',
+                flexShrink: 0,
+              }}
+              aria-label="Toggle sidebar"
+            >
+              ☰
+            </button>
+          )}
+
           <ThemeToggle />
         </div>
       </div>
@@ -222,28 +255,31 @@ export default function Game({ isSolo = false }: GameProps) {
       <div style={{
         flex: 1,
         display: 'flex',
-        gap: '0.75rem',
-        padding: '0.5rem',
+        flexDirection: isMobile ? 'column' : 'row',
+        gap: isMobile ? '0' : '0.75rem',
+        padding: isMobile ? '0' : '0.5rem',
         minHeight: 0,
         overflow: 'hidden',
+        position: 'relative',
       }}>
-        {/* Left: Wheel + Grid + Chips */}
+        {/* Left: Wheel + Grid area */}
         <div style={{
           flex: 1,
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
-          gap: '0.5rem',
+          gap: isMobile ? '0.25rem' : '0.5rem',
           minHeight: 0,
+          overflow: isMobile ? 'hidden' : undefined,
         }}>
           {/* Wheel */}
-          <Wheel2D targetNumber={targetNumber} spinning={spinning} />
+          <Wheel2D targetNumber={targetNumber} spinning={spinning} size={isMobile ? Math.min(200, window.innerWidth - 32) : 280} />
 
           {/* Winning number banner */}
           {showWinning && (
             <div style={{
               textAlign: 'center',
-              padding: '0.375rem 1.5rem',
+              padding: isMobile ? '0.25rem 1rem' : '0.375rem 1.5rem',
               background: 'rgba(0,0,0,0.4)',
               borderRadius: '8px',
               animation: 'fadeInUp 0.3s ease-out',
@@ -253,8 +289,8 @@ export default function Game({ isSolo = false }: GameProps) {
             }}>
               <span style={{
                 display: 'inline-block',
-                width: '24px',
-                height: '24px',
+                width: isMobile ? '20px' : '24px',
+                height: isMobile ? '20px' : '24px',
                 borderRadius: '50%',
                 background: targetNumber !== null
                   ? numberColor(targetNumber) === 'red' ? 'var(--roulette-red)'
@@ -263,30 +299,53 @@ export default function Game({ isSolo = false }: GameProps) {
                   : 'transparent',
                 border: '2px solid rgba(255,255,255,0.5)',
               }} />
-              <span style={{ fontSize: '1.25rem', fontWeight: 700, color: '#ffffff' }}>
+              <span style={{ fontSize: isMobile ? '1rem' : '1.25rem', fontWeight: 700, color: '#ffffff' }}>
                 {winningDisplay}
               </span>
             </div>
           )}
 
-          {/* Betting grid */}
-          <BettingGrid
-            chips={gameState.chips || []}
-            players={players}
-            phase={phase}
-            sessionId={sessionId}
-            selectedAmount={selectedAmount}
-            onPlaceBet={(betType, amount) => send('place-bet', { betType, amount })}
-            onRemoveBet={(chipIndex) => send('remove-bet', { chipIndex })}
-          />
+          {/* Betting grid - scrollable on mobile */}
+          <div style={{
+            flex: 1,
+            minHeight: 0,
+            overflowY: isMobile ? 'auto' : undefined,
+            overflowX: isMobile ? 'auto' : undefined,
+            WebkitOverflowScrolling: 'touch',
+            width: '100%',
+            display: 'flex',
+            justifyContent: 'center',
+            paddingBottom: isMobile ? '0.25rem' : undefined,
+          }}>
+            <BettingGrid
+              chips={gameState.chips || []}
+              players={players}
+              phase={phase}
+              sessionId={sessionId}
+              selectedAmount={selectedAmount}
+              onPlaceBet={(betType, amount) => send('place-bet', { betType, amount })}
+              onRemoveBet={(chipIndex) => send('remove-bet', { chipIndex })}
+              isMobile={isMobile}
+            />
+          </div>
 
           {/* Chip tray */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '0.5rem',
+            flexShrink: 0,
+            padding: isMobile ? '0.25rem 0.5rem' : undefined,
+            background: isMobile ? 'var(--surface-table)' : undefined,
+            borderTop: isMobile ? '1px solid rgba(255,255,255,0.1)' : undefined,
+          }}>
             <ChipTray
               selectedAmount={selectedAmount}
               onSelectAmount={setSelectedAmount}
               onClearBets={() => send('clear-bets')}
               canBet={canBet}
+              isMobile={isMobile}
             />
           </div>
 
@@ -320,99 +379,248 @@ export default function Game({ isSolo = false }: GameProps) {
           )}
         </div>
 
-        {/* Sidebar — multiplayer shows full sidebar, solo shows simplified */}
-        {isSolo ? (
-          <div style={{
-            width: '200px',
-            flexShrink: 0,
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '0.5rem',
-          }}>
-            {/* Solo bankroll card */}
+        {/* Desktop sidebar */}
+        {!isMobile && (
+          isSolo ? (
             <div style={{
-              background: 'var(--surface-panel)',
-              borderRadius: '10px',
-              padding: '0.75rem',
-              border: '1px solid var(--border-subtle)',
+              width: '200px',
+              flexShrink: 0,
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '0.5rem',
             }}>
-              <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.375rem' }}>
-                Bankroll
-              </div>
-              <div style={{
-                fontSize: '1.5rem',
-                fontWeight: 700,
-                fontFamily: "'Inter', sans-serif",
-                color: soloBankroll > 0 ? 'var(--success)' : 'var(--danger)',
-              }}>
-                ${soloBankroll.toLocaleString()}
-              </div>
-              {myPlayer && myPlayer.totalBetThisRound > 0 && (
-                <div style={{
-                  fontSize: '0.6875rem',
-                  color: 'var(--text-muted)',
-                  marginTop: '0.25rem',
-                }}>
-                  ${soloAvailableBankroll.toLocaleString()} available
-                </div>
-              )}
-            </div>
-
-            {/* Hot/Cold panel */}
-            <HotColdPanel lastResults={gameState.lastResults || []} />
-
-            {/* Game Over overlay */}
-            {isGameOver && (
+              {/* Solo bankroll card */}
               <div style={{
                 background: 'var(--surface-panel)',
                 borderRadius: '10px',
-                padding: '1rem',
+                padding: '0.75rem',
                 border: '1px solid var(--border-subtle)',
-                textAlign: 'center',
-                animation: 'fadeInUp 0.4s ease-out',
               }}>
+                <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.375rem' }}>
+                  Bankroll
+                </div>
                 <div style={{
-                  fontSize: '1.125rem',
+                  fontSize: '1.5rem',
                   fontWeight: 700,
-                  color: 'var(--danger)',
-                  fontFamily: "'Newsreader', Georgia, serif",
-                  marginBottom: '0.5rem',
+                  fontFamily: "'Inter', sans-serif",
+                  color: soloBankroll > 0 ? 'var(--success)' : 'var(--danger)',
                 }}>
-                  Game Over
+                  ${soloBankroll.toLocaleString()}
                 </div>
-                <div style={{
-                  fontSize: '0.75rem',
-                  color: 'var(--text-secondary)',
-                  marginBottom: '0.75rem',
-                }}>
-                  Your bankroll has hit $0.
-                </div>
-                <Button onClick={() => send('restart-solo')} size="sm">
-                  Play Again
-                </Button>
+                {myPlayer && myPlayer.totalBetThisRound > 0 && (
+                  <div style={{
+                    fontSize: '0.6875rem',
+                    color: 'var(--text-muted)',
+                    marginTop: '0.25rem',
+                  }}>
+                    ${soloAvailableBankroll.toLocaleString()} available
+                  </div>
+                )}
               </div>
-            )}
-          </div>
-        ) : (
-          <div style={{
-            width: '240px',
-            flexShrink: 0,
-            overflowY: 'auto',
-          }}>
-            <PlayerSidebar
-              players={players}
-              sessionId={sessionId}
-              hostPlayerId={gameState.hostPlayerId}
-              phase={phase}
-              lastResults={gameState.lastResults || []}
-              chatMessages={gameState.chatMessages || []}
-              onSendChat={(text) => send('chat', { text })}
-              onSwapColor={(index) => send('swap-color', { targetIndex: index })}
-              takenColors={takenColors}
-            />
-          </div>
+
+              {/* Hot/Cold panel */}
+              <HotColdPanel lastResults={gameState.lastResults || []} />
+
+              {/* Game Over overlay */}
+              {isGameOver && (
+                <div style={{
+                  background: 'var(--surface-panel)',
+                  borderRadius: '10px',
+                  padding: '1rem',
+                  border: '1px solid var(--border-subtle)',
+                  textAlign: 'center',
+                  animation: 'fadeInUp 0.4s ease-out',
+                }}>
+                  <div style={{
+                    fontSize: '1.125rem',
+                    fontWeight: 700,
+                    color: 'var(--danger)',
+                    fontFamily: "'Newsreader', Georgia, serif",
+                    marginBottom: '0.5rem',
+                  }}>
+                    Game Over
+                  </div>
+                  <div style={{
+                    fontSize: '0.75rem',
+                    color: 'var(--text-secondary)',
+                    marginBottom: '0.75rem',
+                  }}>
+                    Your bankroll has hit $0.
+                  </div>
+                  <Button onClick={() => send('restart-solo')} size="sm">
+                    Play Again
+                  </Button>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div style={{
+              width: '240px',
+              flexShrink: 0,
+              overflowY: 'auto',
+            }}>
+              <PlayerSidebar
+                players={players}
+                sessionId={sessionId}
+                hostPlayerId={gameState.hostPlayerId}
+                phase={phase}
+                lastResults={gameState.lastResults || []}
+                chatMessages={gameState.chatMessages || []}
+                onSendChat={(text) => send('chat', { text })}
+                onSwapColor={(index) => send('swap-color', { targetIndex: index })}
+                takenColors={takenColors}
+              />
+            </div>
+          )
         )}
       </div>
+
+      {/* Mobile sidebar drawer overlay */}
+      {isMobile && sidebarOpen && (
+        <>
+          {/* Backdrop */}
+          <div
+            onClick={() => setSidebarOpen(false)}
+            style={{
+              position: 'fixed',
+              inset: 0,
+              background: 'rgba(0,0,0,0.5)',
+              zIndex: 40,
+            }}
+          />
+          {/* Drawer */}
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            right: 0,
+            bottom: 0,
+            width: 'min(300px, 85vw)',
+            background: 'var(--surface-app)',
+            borderLeft: '1px solid var(--border-subtle)',
+            zIndex: 41,
+            display: 'flex',
+            flexDirection: 'column',
+            overflowY: 'auto',
+            animation: 'slideInRight 0.25s ease-out',
+            boxShadow: '-4px 0 16px rgba(0,0,0,0.3)',
+          }}>
+            {/* Drawer header */}
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              padding: '0.75rem 1rem',
+              borderBottom: '1px solid var(--border-subtle)',
+              minHeight: '44px',
+            }}>
+              <span style={{ fontWeight: 600, fontSize: '0.9375rem', color: 'var(--text-primary)' }}>
+                {isSolo ? 'Game Info' : 'Players & Chat'}
+              </span>
+              <button
+                onClick={() => setSidebarOpen(false)}
+                style={{
+                  width: '44px',
+                  height: '44px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  background: 'none',
+                  border: 'none',
+                  color: 'var(--text-secondary)',
+                  fontSize: '1.5rem',
+                  cursor: 'pointer',
+                }}
+                aria-label="Close sidebar"
+              >
+                ×
+              </button>
+            </div>
+
+            {/* Drawer content */}
+            <div style={{ flex: 1, padding: '0.75rem', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              {isSolo ? (
+                <>
+                  {/* Solo bankroll card */}
+                  <div style={{
+                    background: 'var(--surface-panel)',
+                    borderRadius: '10px',
+                    padding: '0.75rem',
+                    border: '1px solid var(--border-subtle)',
+                  }}>
+                    <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.375rem' }}>
+                      Bankroll
+                    </div>
+                    <div style={{
+                      fontSize: '1.5rem',
+                      fontWeight: 700,
+                      fontFamily: "'Inter', sans-serif",
+                      color: soloBankroll > 0 ? 'var(--success)' : 'var(--danger)',
+                    }}>
+                      ${soloBankroll.toLocaleString()}
+                    </div>
+                    {myPlayer && myPlayer.totalBetThisRound > 0 && (
+                      <div style={{
+                        fontSize: '0.6875rem',
+                        color: 'var(--text-muted)',
+                        marginTop: '0.25rem',
+                      }}>
+                        ${soloAvailableBankroll.toLocaleString()} available
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Hot/Cold panel */}
+                  <HotColdPanel lastResults={gameState.lastResults || []} />
+
+                  {/* Game Over in drawer */}
+                  {isGameOver && (
+                    <div style={{
+                      background: 'var(--surface-panel)',
+                      borderRadius: '10px',
+                      padding: '1rem',
+                      border: '1px solid var(--border-subtle)',
+                      textAlign: 'center',
+                      animation: 'fadeInUp 0.4s ease-out',
+                    }}>
+                      <div style={{
+                        fontSize: '1.125rem',
+                        fontWeight: 700,
+                        color: 'var(--danger)',
+                        fontFamily: "'Newsreader', Georgia, serif",
+                        marginBottom: '0.5rem',
+                      }}>
+                        Game Over
+                      </div>
+                      <div style={{
+                        fontSize: '0.75rem',
+                        color: 'var(--text-secondary)',
+                        marginBottom: '0.75rem',
+                      }}>
+                        Your bankroll has hit $0.
+                      </div>
+                      <Button onClick={() => send('restart-solo')} size="sm">
+                        Play Again
+                      </Button>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <PlayerSidebar
+                  players={players}
+                  sessionId={sessionId}
+                  hostPlayerId={gameState.hostPlayerId}
+                  phase={phase}
+                  lastResults={gameState.lastResults || []}
+                  chatMessages={gameState.chatMessages || []}
+                  onSendChat={(text) => send('chat', { text })}
+                  onSwapColor={(index) => send('swap-color', { targetIndex: index })}
+                  takenColors={takenColors}
+                />
+              )}
+            </div>
+          </div>
+        </>
+      )}
 
       {/* Game over full overlay for solo mode */}
       {isGameOver && (
@@ -429,10 +637,10 @@ export default function Game({ isSolo = false }: GameProps) {
           <div style={{
             background: 'var(--surface-panel)',
             borderRadius: '16px',
-            padding: '2rem 2.5rem',
+            padding: isMobile ? '1.5rem' : '2rem 2.5rem',
             border: '1px solid var(--border-subtle)',
             textAlign: 'center',
-            maxWidth: '320px',
+            maxWidth: isMobile ? 'calc(100vw - 2rem)' : '320px',
           }}>
             <div style={{
               fontSize: '2rem',
