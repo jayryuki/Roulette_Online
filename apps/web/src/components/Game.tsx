@@ -9,7 +9,9 @@ import BettingGrid from './BettingGrid';
 import ChipTray from './ChipTray';
 import PlayerSidebar from './PlayerSidebar';
 import HotColdPanel from './HotColdPanel';
+import SettingsPanel from './SettingsPanel';
 import { displayLabel, numberColor } from '@roulette/game-core';
+import { playChipPlace, playWheelSpin, playWin, playLose, toggleMute, getMuteState } from '../lib/sounds.js';
 import type { RouletteGameState } from '../types';
 
 interface GameProps {
@@ -20,7 +22,7 @@ export default function Game({ isSolo = false }: GameProps) {
   const { roomCode } = useParams<{ roomCode: string }>();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const displayName = searchParams.get('name') || 'Player';
+  const displayName = searchParams.get('name') || (() => { try { return sessionStorage.getItem('roulette_displayName') || 'Player'; } catch { return 'Player'; } })();
 
   // Both hooks are always called (React rules of hooks), but only one is used based on mode
   const multiHook = useRouletteRoom();
@@ -33,6 +35,9 @@ export default function Game({ isSolo = false }: GameProps) {
   const hasJoinedRef = useRef(false);
   const isMobile = useIsMobile();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [muted, setMuted] = useState(getMuteState);
+  const prevPhaseRef = useRef<string>('');
 
   const roundResult = useMemo(() => {
     if (!gameState?.roundResult) return null;
@@ -57,16 +62,45 @@ export default function Game({ isSolo = false }: GameProps) {
     }
   }, [isSolo, joinRoom, displayName]);
 
+  // NOTE: We intentionally do NOT call leave() on beforeunload.
+  // On page refresh, we want the reconnection token to remain in
+  // sessionStorage so the player can auto-rejoin. The server's
+  // allowReconnection() keeps the session alive for 60 seconds.
+  // leave() is only called on explicit "Leave" button click.
+
+  // Sound effects
   useEffect(() => {
-    const handleBeforeUnload = () => { leave(); };
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => { window.removeEventListener('beforeunload', handleBeforeUnload); };
-  }, [leave]);
+    const phase = gameState?.phase;
+    if (!phase) return;
+
+    if (phase === 'SPINNING' && prevPhaseRef.current === 'BETTING') {
+      playWheelSpin();
+    }
+    if (phase === 'SETTLEMENT' && prevPhaseRef.current === 'SPINNING') {
+      // Determine if current player won or lost
+      const myResults = roundResult?.results?.filter((r: any) => r.playerId === sessionId);
+      const anyWin = myResults?.some((r: any) => r.won);
+      const anyLoss = myResults?.some((r: any) => !r.won);
+      if (anyWin) playWin();
+      else if (anyLoss) playLose();
+    }
+    prevPhaseRef.current = phase;
+  }, [gameState?.phase, roundResult, sessionId]);
+
+
 
   const handleLeave = useCallback(() => {
     leave();
     navigate('/');
   }, [leave, navigate]);
+
+  const handleToggleMute = useCallback(() => {
+    setMuted(toggleMute());
+  }, []);
+
+  const handleUpdateSettings = useCallback((settings: Partial<{ minBet: number; maxBet: number; betTime: number; maxPlayers: number }>) => {
+    send('update-settings', settings);
+  }, [send]);
 
   // Loading/connecting state
   if (!gameState || !connected) {
@@ -223,6 +257,54 @@ export default function Game({ isSolo = false }: GameProps) {
             </span>
           )}
 
+          {/* Settings gear — multiplayer only */}
+          {!isSolo && myPlayer && (
+            <button
+              onClick={() => setSettingsOpen(true)}
+              style={{
+                width: isMobile ? '44px' : '32px',
+                height: isMobile ? '44px' : '32px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                background: 'rgba(255,255,255,0.1)',
+                border: 'none',
+                borderRadius: '8px',
+                color: 'rgba(255,255,255,0.8)',
+                fontSize: isMobile ? '1.125rem' : '0.9375rem',
+                cursor: 'pointer',
+                flexShrink: 0,
+              }}
+              title="Room Settings"
+              aria-label="Room Settings"
+            >
+              ⚙
+            </button>
+          )}
+
+          {/* Mute toggle */}
+          <button
+            onClick={handleToggleMute}
+            style={{
+              width: isMobile ? '44px' : '32px',
+              height: isMobile ? '44px' : '32px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              background: 'rgba(255,255,255,0.1)',
+              border: 'none',
+              borderRadius: '8px',
+              color: 'rgba(255,255,255,0.8)',
+              fontSize: isMobile ? '1.125rem' : '0.9375rem',
+              cursor: 'pointer',
+              flexShrink: 0,
+            }}
+            title={muted ? 'Unmute' : 'Mute'}
+            aria-label={muted ? 'Unmute' : 'Mute'}
+          >
+            {muted ? '🔇' : '🔊'}
+          </button>
+
           {/* Mobile: sidebar toggle button */}
           {isMobile && (
             <button
@@ -250,6 +332,22 @@ export default function Game({ isSolo = false }: GameProps) {
           <ThemeToggle style={isMobile ? { minHeight: '44px', minWidth: '44px' } : undefined} />
         </div>
       </div>
+
+      {/* Settings panel overlay */}
+      {settingsOpen && gameState && (
+        <SettingsPanel
+          current={{
+            minBet: gameState.minBet,
+            maxBet: gameState.maxBet,
+            betTime: gameState.betTime,
+            maxPlayers: gameState.maxPlayers,
+          }}
+          isHost={!!myPlayer?.isHost}
+          onUpdate={handleUpdateSettings}
+          onClose={() => setSettingsOpen(false)}
+          isMobile={isMobile}
+        />
+      )}
 
       {/* Main content */}
       <div style={{
@@ -323,7 +421,10 @@ export default function Game({ isSolo = false }: GameProps) {
               phase={phase}
               sessionId={sessionId}
               selectedAmount={selectedAmount}
-              onPlaceBet={(betType, amount) => send('place-bet', { betType, amount })}
+              onPlaceBet={(betType, amount) => {
+                playChipPlace();
+                send('place-bet', { betType, amount });
+              }}
               onRemoveBet={(chipIndex) => send('remove-bet', { chipIndex })}
               isMobile={isMobile}
             />
