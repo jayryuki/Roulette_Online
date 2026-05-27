@@ -85,6 +85,11 @@ export default function Lobby() {
     if (joined) navigate(`/game/${room.roomCode}?name=${encodeURIComponent(name)}`);
   };
 
+  const handlePlaySolo = () => {
+    const name = getName();
+    navigate(`/solo?name=${encodeURIComponent(name)}`);
+  };
+
   const activeRooms = rooms.filter(r => r.status !== 'finished');
 
   return (
@@ -130,8 +135,9 @@ export default function Lobby() {
       </div>
 
       {/* Action buttons */}
-      <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+      <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'center' }}>
         <Button size="lg" onClick={handleCreateRoom} disabled={loading}>Create Room</Button>
+        <Button size="lg" variant="secondary" onClick={handlePlaySolo} disabled={loading}>Play Solo</Button>
         <ThemeToggle />
       </div>
 

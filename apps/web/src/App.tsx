@@ -7,6 +7,7 @@ export default function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Lobby />} />
+        <Route path="/solo" element={<Game isSolo />} />
         <Route path="/game/:roomCode" element={<Game />} />
       </Routes>
     </BrowserRouter>
