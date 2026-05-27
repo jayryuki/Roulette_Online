@@ -1,8 +1,7 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import { useRouletteRoom } from '../hooks/useRouletteRoom';
-import { Button } from './common/Button';
-import { ThemeToggle } from './common/ThemeToggle';
+import { Button, ThemeToggle } from '@games/ui';
 import Wheel2D from './Wheel2D';
 import BettingGrid from './BettingGrid';
 import ChipTray from './ChipTray';
