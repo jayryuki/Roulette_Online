@@ -151,7 +151,12 @@ export default function BettingGrid({
       </div>
 
       {/* Dozen bets */}
-      <div style={{ display: 'flex', gap: '2px' }}>
+      <div style={{
+        display: 'flex',
+        gap: '2px',
+        overflowX: isMobile ? 'auto' : undefined,
+        WebkitOverflowScrolling: isMobile ? 'touch' : undefined,
+      }}>
         {[
           { label: '1st 12', betType: 'dozen_1' },
           { label: '2nd 12', betType: 'dozen_2' },
@@ -164,7 +169,8 @@ export default function BettingGrid({
             onMouseLeave={(e) => { e.currentTarget.style.filter = ''; }}
             style={{
               ...cellStyle,
-              flex: 1,
+              flex: isMobile ? '0 0 auto' : 1,
+              minWidth: '44px',
               backgroundColor: 'var(--surface-panel-raised)',
               color: 'var(--text-primary)',
               fontSize: isMobile ? '10px' : '9px',
@@ -179,7 +185,12 @@ export default function BettingGrid({
       </div>
 
       {/* Even money bets */}
-      <div style={{ display: 'flex', gap: '2px' }}>
+      <div style={{
+        display: 'flex',
+        gap: '2px',
+        overflowX: isMobile ? 'auto' : undefined,
+        WebkitOverflowScrolling: isMobile ? 'touch' : undefined,
+      }}>
         {[
           { label: '1-18', betType: 'low', bg: 'var(--surface-panel-raised)', fg: 'var(--text-primary)' },
           { label: 'EVEN', betType: 'even', bg: 'var(--surface-panel-raised)', fg: 'var(--text-primary)' },
@@ -195,7 +206,8 @@ export default function BettingGrid({
             onMouseLeave={(e) => { e.currentTarget.style.filter = ''; }}
             style={{
               ...cellStyle,
-              flex: 1,
+              flex: isMobile ? '0 0 auto' : 1,
+              minWidth: '44px',
               backgroundColor: bg,
               color: fg,
               fontSize: isMobile ? '10px' : '9px',
