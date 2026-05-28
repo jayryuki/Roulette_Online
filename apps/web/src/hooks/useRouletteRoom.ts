@@ -2,9 +2,8 @@ import { useRef, useState, useCallback } from 'react';
 import { Client, Room } from 'colyseus.js';
 import type { RouletteGameState } from '../types';
 
-const ENDPOINT = window.location.hostname === 'localhost'
-  ? 'ws://localhost:2500'
-  : `wss://${window.location.hostname}:2500`;
+const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+const ENDPOINT = `${protocol}//${window.location.host}`;
 
 const SS_ROOM_CODE = 'roulette_roomCode';
 const SS_RECONNECTION_TOKEN = 'roulette_reconnectionToken';
