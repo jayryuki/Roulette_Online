@@ -23,7 +23,10 @@ function parseState(state: any): RouletteGameState {
   const playersMap = new Map<string, any>();
   if (state.players) {
     for (const [key, value] of state.players.entries()) {
-      playersMap.set(key, { ...value });
+      playersMap.set(key, {
+        ...value,
+        roundHistory: (() => { try { return JSON.parse(value.roundHistory || '[]'); } catch { return []; } })(),
+      });
     }
   }
 

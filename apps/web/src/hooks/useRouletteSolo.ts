@@ -27,6 +27,7 @@ export function useRouletteSolo() {
     roundResult: '',
     displayName: 'Player',
     gameOver: false,
+    roundHistory: [] as number[],
   });
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -43,6 +44,7 @@ export function useRouletteSolo() {
       bankroll: s.bankroll,
       chipColor: 0,
       totalBetThisRound: s.totalBetThisRound,
+      roundHistory: s.roundHistory,
     });
 
     return {
@@ -118,6 +120,10 @@ export function useRouletteSolo() {
     if (s.bankroll < 0) s.bankroll = 0;
 
     s.totalBetThisRound = 0;
+
+    // Track round history
+    s.roundHistory.push(netProfit);
+    if (s.roundHistory.length > 10) s.roundHistory = s.roundHistory.slice(-10);
 
     const resultSummary = results.map(r => ({
       playerId: r.playerId,
@@ -233,6 +239,7 @@ export function useRouletteSolo() {
           roundResult: '',
           displayName: stateRef.current.displayName,
           gameOver: false,
+          roundHistory: [],
         };
         refresh();
         break;

@@ -7,6 +7,7 @@ import { Button, ThemeToggle } from '@games/ui';
 import Wheel2D from './Wheel2D';
 import BettingGrid from './BettingGrid';
 import ChipTray from './ChipTray';
+import BankrollDisplay from './BankrollDisplay';
 import PlayerSidebar from './PlayerSidebar';
 import HotColdPanel from './HotColdPanel';
 import SettingsPanel from './SettingsPanel';
@@ -213,30 +214,6 @@ export default function Game({ isSolo = false }: GameProps) {
             )
           )}
 
-          {/* Solo: Bankroll display */}
-          {isSolo && (
-            <div style={{
-              fontFamily: "'Inter', sans-serif",
-              fontWeight: 700,
-              fontSize: isMobile ? '0.875rem' : '1rem',
-              color: '#ffffff',
-              background: 'rgba(0,0,0,0.3)',
-              padding: isMobile ? '0.25rem 0.5rem' : '0.25rem 0.75rem',
-              borderRadius: '6px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.375rem',
-            }}>
-              <span style={{ fontSize: '0.75rem', opacity: 0.6 }}>$</span>
-              <span>{soloBankroll.toLocaleString()}</span>
-              {myPlayer && myPlayer.totalBetThisRound > 0 && (
-                <span style={{ fontSize: '0.6875rem', opacity: 0.5 }}>
-                  (−${myPlayer.totalBetThisRound})
-                </span>
-              )}
-            </div>
-          )}
-
           {/* Room code */}
           {!isSolo && (
             <div style={{
@@ -418,6 +395,14 @@ export default function Game({ isSolo = false }: GameProps) {
             </div>
           )}
 
+          {/* Bankroll display */}
+          <BankrollDisplay
+            bankroll={isSolo ? soloBankroll : (myPlayer?.bankroll ?? 0)}
+            availableBankroll={isSolo ? soloAvailableBankroll : ((myPlayer?.bankroll ?? 0) - (myPlayer?.totalBetThisRound ?? 0))}
+            roundHistory={myPlayer?.roundHistory ?? []}
+            isMobile={isMobile}
+          />
+
           {/* Betting grid - scrollable on mobile */}
           <div style={{
             flex: 1,
@@ -505,35 +490,6 @@ export default function Game({ isSolo = false }: GameProps) {
               flexDirection: 'column',
               gap: '0.5rem',
             }}>
-              {/* Solo bankroll card */}
-              <div style={{
-                background: 'var(--surface-panel)',
-                borderRadius: '10px',
-                padding: '0.75rem',
-                border: '1px solid var(--border-subtle)',
-              }}>
-                <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.375rem' }}>
-                  Bankroll
-                </div>
-                <div style={{
-                  fontSize: '1.5rem',
-                  fontWeight: 700,
-                  fontFamily: "'Inter', sans-serif",
-                  color: soloBankroll > 0 ? 'var(--success)' : 'var(--danger)',
-                }}>
-                  ${soloBankroll.toLocaleString()}
-                </div>
-                {myPlayer && myPlayer.totalBetThisRound > 0 && (
-                  <div style={{
-                    fontSize: '0.6875rem',
-                    color: 'var(--text-muted)',
-                    marginTop: '0.25rem',
-                  }}>
-                    ${soloAvailableBankroll.toLocaleString()} available
-                  </div>
-                )}
-              </div>
-
               {/* Hot/Cold panel */}
               <HotColdPanel lastResults={gameState.lastResults || []} />
 
@@ -657,35 +613,6 @@ export default function Game({ isSolo = false }: GameProps) {
             <div style={{ flex: 1, padding: '0.75rem', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
               {isSolo ? (
                 <>
-                  {/* Solo bankroll card */}
-                  <div style={{
-                    background: 'var(--surface-panel)',
-                    borderRadius: '10px',
-                    padding: '0.75rem',
-                    border: '1px solid var(--border-subtle)',
-                  }}>
-                    <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.375rem' }}>
-                      Bankroll
-                    </div>
-                    <div style={{
-                      fontSize: '1.5rem',
-                      fontWeight: 700,
-                      fontFamily: "'Inter', sans-serif",
-                      color: soloBankroll > 0 ? 'var(--success)' : 'var(--danger)',
-                    }}>
-                      ${soloBankroll.toLocaleString()}
-                    </div>
-                    {myPlayer && myPlayer.totalBetThisRound > 0 && (
-                      <div style={{
-                        fontSize: '0.6875rem',
-                        color: 'var(--text-muted)',
-                        marginTop: '0.25rem',
-                      }}>
-                        ${soloAvailableBankroll.toLocaleString()} available
-                      </div>
-                    )}
-                  </div>
-
                   {/* Hot/Cold panel */}
                   <HotColdPanel lastResults={gameState.lastResults || []} />
 

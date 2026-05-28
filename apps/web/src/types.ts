@@ -17,6 +17,7 @@ export interface PlayerData {
   bankroll: number;
   chipColor: number;
   totalBetThisRound: number;
+  roundHistory: number[];
 }
 
 export interface ChatMessage {
