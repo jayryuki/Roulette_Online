@@ -183,19 +183,34 @@ export default function Game({ isSolo = false }: GameProps) {
 
           {/* Multiplayer: Timer during betting phase */}
           {!isSolo && phase === 'BETTING' && (
-            <span style={{
-              fontFamily: "'Inter', sans-serif",
-              fontWeight: 700,
-              fontSize: '1rem',
-              color: 'rgba(255,255,255,0.95)',
-              background: 'rgba(0,0,0,0.3)',
-              padding: '0.25rem 0.625rem',
-              borderRadius: '6px',
-              minWidth: '2.5rem',
-              textAlign: 'center',
-            }}>
-              {gameState.timerSeconds}
-            </span>
+            gameState.timerSeconds > 0 ? (
+              <span style={{
+                fontFamily: "'Inter', sans-serif",
+                fontWeight: 700,
+                fontSize: '1rem',
+                color: 'rgba(255,255,255,0.95)',
+                background: 'rgba(0,0,0,0.3)',
+                padding: '0.25rem 0.625rem',
+                borderRadius: '6px',
+                minWidth: '2.5rem',
+                textAlign: 'center',
+              }}>
+                {gameState.timerSeconds}
+              </span>
+            ) : (
+              <span style={{
+                fontFamily: "'Inter', sans-serif",
+                fontWeight: 600,
+                fontSize: '0.75rem',
+                color: 'var(--success)',
+                background: 'rgba(0,0,0,0.3)',
+                padding: '0.25rem 0.625rem',
+                borderRadius: '6px',
+                letterSpacing: '0.05em',
+              }}>
+                PLACE YOUR BETS
+              </span>
+            )
           )}
 
           {/* Solo: Bankroll display */}
