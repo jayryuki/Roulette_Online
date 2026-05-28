@@ -96,67 +96,85 @@ export default function BettingGrid({
     );
   };
 
-  // Traditional roulette layout: 3 columns, 12 rows
-  // Numbers arranged as: 3,6,9,...,36 | 2,5,8,...,35 | 1,4,7,...,34
-  const col3 = Array.from({ length: 12 }, (_, i) => i * 3 + 3); // rightmost
-  const col2 = Array.from({ length: 12 }, (_, i) => i * 3 + 2); // middle
-  const col1 = Array.from({ length: 12 }, (_, i) => i * 3 + 1); // leftmost
+  // Horizontal roulette layout: 3 rows x 12 columns
+  // Top row:    3, 6, 9, 12, 15, 18, 21, 24, 27, 30, 33, 36
+  // Middle row: 2, 5, 8, 11, 14, 17, 20, 23, 26, 29, 32, 35
+  // Bottom row: 1, 4, 7, 10, 13, 16, 19, 22, 25, 28, 31, 34
+  const topRow = Array.from({ length: 12 }, (_, i) => i * 3 + 3);
+  const midRow = Array.from({ length: 12 }, (_, i) => i * 3 + 2);
+  const botRow = Array.from({ length: 12 }, (_, i) => i * 3 + 1);
 
   const numCellSize: React.CSSProperties = isMobile
-    ? { width: '100%', height: '44px', fontSize: '12px', minHeight: '44px' }
-    : { width: '32px', height: '22px', fontSize: '10px' };
+    ? { width: '44px', height: '36px', fontSize: '12px', minHeight: '36px' }
+    : { width: '36px', height: '28px', fontSize: '10px' };
+
+  const zeroCellWidth = isMobile ? '44px' : '36px';
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', userSelect: 'none' }}>
-      {/* 0 and 00 */}
-      <div style={{ display: 'flex', gap: '2px' }}>
-        <div
-          onClick={() => handleNumberClick(0)}
-          onMouseEnter={(e) => { e.currentTarget.style.filter = 'brightness(1.3)'; }}
-          onMouseLeave={(e) => { e.currentTarget.style.filter = ''; }}
-          style={{ ...cellStyle, ...numCellSize, flex: 1, backgroundColor: numColor(0), height: isMobile ? '44px' : '24px' }}
-        >
-          0
-          {renderChipsOnCell('straight_0')}
-        </div>
-        <div
-          onClick={() => handleNumberClick(37)}
-          onMouseEnter={(e) => { e.currentTarget.style.filter = 'brightness(1.3)'; }}
-          onMouseLeave={(e) => { e.currentTarget.style.filter = ''; }}
-          style={{ ...cellStyle, ...numCellSize, flex: 1, backgroundColor: numColor(37), height: isMobile ? '44px' : '24px' }}
-        >
-          00
-          {renderChipsOnCell('straight_37')}
-        </div>
-      </div>
-
-      {/* Number grid: 12 rows x 3 columns (traditional layout) */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
-        {Array.from({ length: 12 }, (_, row) => (
-          <div key={row} style={{ display: 'flex', gap: '1px' }}>
-            {[col1[row], col2[row], col3[row]].map(num => (
-              <div
-                key={num}
-                onClick={() => handleNumberClick(num)}
-                onMouseEnter={(e) => { e.currentTarget.style.filter = 'brightness(1.3)'; }}
-                onMouseLeave={(e) => { e.currentTarget.style.filter = ''; }}
-                style={{ ...cellStyle, ...numCellSize, backgroundColor: numColor(num), flex: 1 }}
-              >
-                {displayNum(num)}
-                {renderChipsOnCell(`straight_${num}`)}
-              </div>
-            ))}
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1px', userSelect: 'none' }}>
+      {/* Main area: 0/00 | number grid | column bets */}
+      <div style={{ display: 'flex', gap: '1px' }}>
+        {/* 0 and 00 on the left */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
+          <div
+            onClick={() => handleNumberClick(0)}
+            onMouseEnter={(e) => { e.currentTarget.style.filter = 'brightness(1.3)'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.filter = ''; }}
+            style={{ ...cellStyle, ...numCellSize, flex: 1, backgroundColor: numColor(0), width: zeroCellWidth }}
+          >
+            0
+            {renderChipsOnCell('straight_0')}
           </div>
-        ))}
+          <div
+            onClick={() => handleNumberClick(37)}
+            onMouseEnter={(e) => { e.currentTarget.style.filter = 'brightness(1.3)'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.filter = ''; }}
+            style={{ ...cellStyle, ...numCellSize, flex: 1, backgroundColor: numColor(37), width: zeroCellWidth }}
+          >
+            00
+            {renderChipsOnCell('straight_37')}
+          </div>
+        </div>
+
+        {/* Number grid: 3 rows x 12 cols */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1px', overflowX: isMobile ? 'auto' : undefined, WebkitOverflowScrolling: isMobile ? 'touch' : undefined }}>
+          {[topRow, midRow, botRow].map((row, ri) => (
+            <div key={ri} style={{ display: 'flex', gap: '1px' }}>
+              {row.map(num => (
+                <div
+                  key={num}
+                  onClick={() => handleNumberClick(num)}
+                  onMouseEnter={(e) => { e.currentTarget.style.filter = 'brightness(1.3)'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.filter = ''; }}
+                  style={{ ...cellStyle, ...numCellSize, backgroundColor: numColor(num) }}
+                >
+                  {displayNum(num)}
+                  {renderChipsOnCell(`straight_${num}`)}
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
+
+        {/* Column bets on right */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
+          {['column_3', 'column_2', 'column_1'].map(betType => (
+            <div
+              key={betType}
+              onClick={() => handleOutsideBet(betType)}
+              onMouseEnter={(e) => { e.currentTarget.style.filter = 'brightness(1.2)'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.filter = ''; }}
+              style={{ ...cellStyle, ...numCellSize, backgroundColor: 'var(--surface-panel-raised)', color: 'var(--text-primary)' }}
+            >
+              2:1
+              {renderChipsOnCell(betType)}
+            </div>
+          ))}
+        </div>
       </div>
 
-      {/* Dozen bets */}
-      <div style={{
-        display: 'flex',
-        gap: '2px',
-        overflowX: isMobile ? 'auto' : undefined,
-        WebkitOverflowScrolling: isMobile ? 'touch' : undefined,
-      }}>
+      {/* Dozen bets - aligned with number grid (offset by 0/00 width) */}
+      <div style={{ display: 'flex', gap: '1px', marginLeft: `calc(${zeroCellWidth} + 1px)` }}>
         {[
           { label: '1st 12', betType: 'dozen_1' },
           { label: '2nd 12', betType: 'dozen_2' },
@@ -169,12 +187,12 @@ export default function BettingGrid({
             onMouseLeave={(e) => { e.currentTarget.style.filter = ''; }}
             style={{
               ...cellStyle,
-              flex: isMobile ? '0 0 auto' : 1,
+              flex: 1,
               minWidth: '44px',
               backgroundColor: 'var(--surface-panel-raised)',
               color: 'var(--text-primary)',
               fontSize: isMobile ? '10px' : '9px',
-              height: isMobile ? '44px' : '22px',
+              height: isMobile ? '36px' : '22px',
               fontWeight: 600,
             }}
           >
@@ -184,13 +202,8 @@ export default function BettingGrid({
         ))}
       </div>
 
-      {/* Even money bets */}
-      <div style={{
-        display: 'flex',
-        gap: '2px',
-        overflowX: isMobile ? 'auto' : undefined,
-        WebkitOverflowScrolling: isMobile ? 'touch' : undefined,
-      }}>
+      {/* Even money bets - aligned with number grid (offset by 0/00 width) */}
+      <div style={{ display: 'flex', gap: '1px', marginLeft: `calc(${zeroCellWidth} + 1px)` }}>
         {[
           { label: '1-18', betType: 'low', bg: 'var(--surface-panel-raised)', fg: 'var(--text-primary)' },
           { label: 'EVEN', betType: 'even', bg: 'var(--surface-panel-raised)', fg: 'var(--text-primary)' },
@@ -206,12 +219,12 @@ export default function BettingGrid({
             onMouseLeave={(e) => { e.currentTarget.style.filter = ''; }}
             style={{
               ...cellStyle,
-              flex: isMobile ? '0 0 auto' : 1,
+              flex: 1,
               minWidth: '44px',
               backgroundColor: bg,
               color: fg,
               fontSize: isMobile ? '10px' : '9px',
-              height: isMobile ? '44px' : '22px',
+              height: isMobile ? '36px' : '22px',
               fontWeight: 600,
             }}
           >
