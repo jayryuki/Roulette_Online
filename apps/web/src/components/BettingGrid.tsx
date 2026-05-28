@@ -188,6 +188,7 @@ export default function BettingGrid({
   return (
     <div
       ref={gridRef}
+      data-grid
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
       style={{ display: 'flex', flexDirection: 'column', gap: '1px', userSelect: 'none' }}

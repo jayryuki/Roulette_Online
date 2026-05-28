@@ -28,6 +28,7 @@ export function useRouletteSolo() {
     displayName: 'Player',
     gameOver: false,
     roundHistory: [] as number[],
+    lastBets: [] as Array<{ betType: string; amount: number }>,
   });
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -45,7 +46,7 @@ export function useRouletteSolo() {
       chipColor: 0,
       totalBetThisRound: s.totalBetThisRound,
       roundHistory: s.roundHistory,
-      lastBets: '',
+      lastBets: s.lastBets.length > 0 ? JSON.stringify(s.lastBets) : '',
     });
 
     return {
@@ -96,6 +97,10 @@ export function useRouletteSolo() {
 
   const startNextRound = useCallback(() => {
     const s = stateRef.current;
+    // Snapshot last bets before clearing
+    if (s.chips.length > 0) {
+      s.lastBets = s.chips.map(c => ({ betType: c.betType, amount: c.amount }));
+    }
     s.phase = 'BETTING';
     s.chips = [];
     s.winningNumber = -1;
@@ -204,6 +209,24 @@ export function useRouletteSolo() {
         break;
       }
 
+      case 'repeat-last-bet': {
+        if (s.phase !== 'BETTING' || s.lastBets.length === 0) return;
+        for (const bet of s.lastBets) {
+          const available = s.bankroll - s.totalBetThisRound;
+          if (bet.amount > available) continue;
+          if (!validateBet(bet.betType)) continue;
+          s.totalBetThisRound += bet.amount;
+          s.chips.push({
+            playerId: SOLO_SESSION_ID,
+            chipColor: 0,
+            amount: bet.amount,
+            betType: bet.betType,
+          });
+        }
+        refresh();
+        break;
+      }
+
       case 'spin-now': {
         if (s.phase !== 'BETTING') return;
         if (s.chips.length === 0) return;
@@ -241,6 +264,7 @@ export function useRouletteSolo() {
           displayName: stateRef.current.displayName,
           gameOver: false,
           roundHistory: [],
+          lastBets: [],
         };
         refresh();
         break;

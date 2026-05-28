@@ -90,7 +90,13 @@ export default function Game({ isSolo = false }: GameProps) {
   // Global pointer handlers for drag-and-drop
   useEffect(() => {
     const handleMove = (e: PointerEvent) => moveDrag(e.clientX, e.clientY);
-    const handleUp = () => endDrag();
+    const handleUp = (e: PointerEvent) => {
+      // Only cancel if the up event isn't inside the grid
+      const gridEl = (e.target as HTMLElement)?.closest('[data-grid]');
+      if (!gridEl) {
+        endDrag();
+      }
+    };
     window.addEventListener('pointermove', handleMove);
     window.addEventListener('pointerup', handleUp);
     return () => {
