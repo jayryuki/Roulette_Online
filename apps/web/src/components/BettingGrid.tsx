@@ -1,6 +1,16 @@
-import { useMemo } from 'react';
+import { useMemo, useRef, useState, useCallback } from 'react';
 import type { ChipData, PlayerData } from '../types';
 import { CHIP_COLORS } from '@roulette/game-core';
+import { detectDropZone } from '../lib/dropZones';
+import type { CellRect, DropResult } from '../lib/dropZones';
+
+interface DragStateInput {
+  isDragging: boolean;
+  amount: number;
+  currentX: number;
+  currentY: number;
+  chipColorIndex: number;
+}
 
 interface BettingGridProps {
   chips: ChipData[];
@@ -11,6 +21,9 @@ interface BettingGridProps {
   onPlaceBet: (betType: string, amount: number) => void;
   onRemoveBet: (chipIndex: number) => void;
   isMobile?: boolean;
+  dragState?: DragStateInput | null;
+  onDrop?: (betType: string, amount: number) => void;
+  onDragCancel?: () => void;
 }
 
 const RED_NUMBERS = new Set([1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36]);
@@ -40,8 +53,12 @@ const cellStyle: React.CSSProperties = {
 
 export default function BettingGrid({
   chips, players, phase, sessionId, selectedAmount, onPlaceBet, onRemoveBet, isMobile = false,
+  dragState, onDrop, onDragCancel,
 }: BettingGridProps) {
   const canBet = phase === 'BETTING' && sessionId != null;
+  const gridRef = useRef<HTMLDivElement>(null);
+  const [highlightedNumbers, setHighlightedNumbers] = useState<Set<number>>(new Set());
+  const [dropPreview, setDropPreview] = useState<DropResult | null>(null);
 
   const chipMap = useMemo(() => {
     const map = new Map<string, ChipData[]>();
@@ -53,12 +70,68 @@ export default function BettingGrid({
     return map;
   }, [chips]);
 
+  const computeCellRects = useCallback((): CellRect[] => {
+    if (!gridRef.current) return [];
+    const cells = gridRef.current.querySelectorAll('[data-number]');
+    return Array.from(cells).map(el => {
+      const rect = el.getBoundingClientRect();
+      return {
+        number: Number(el.getAttribute('data-number')),
+        row: Number(el.getAttribute('data-row')),
+        col: Number(el.getAttribute('data-col')),
+        x: rect.left,
+        y: rect.top,
+        width: rect.width,
+        height: rect.height,
+      };
+    });
+  }, []);
+
+  const computeZeroRects = useCallback(() => {
+    if (!gridRef.current) return { zeroRect: undefined, doubleZeroRect: undefined };
+    const zeroEl = gridRef.current.querySelector('[data-number="0"]');
+    const doubleZeroEl = gridRef.current.querySelector('[data-number="37"]');
+    const zeroRect = zeroEl ? zeroEl.getBoundingClientRect() : undefined;
+    const doubleZeroRect = doubleZeroEl ? doubleZeroEl.getBoundingClientRect() : undefined;
+    return { zeroRect, doubleZeroRect };
+  }, []);
+
+  const handlePointerMove = useCallback((e: React.PointerEvent) => {
+    if (!dragState?.isDragging) return;
+    const cellRects = computeCellRects();
+    const { zeroRect, doubleZeroRect } = computeZeroRects();
+    const result = detectDropZone(e.clientX, e.clientY, cellRects, zeroRect, doubleZeroRect);
+    if (result) {
+      setHighlightedNumbers(new Set(result.coveredNumbers));
+      setDropPreview(result);
+    } else {
+      setHighlightedNumbers(new Set());
+      setDropPreview(null);
+    }
+  }, [dragState?.isDragging, computeCellRects, computeZeroRects]);
+
+  const handlePointerUp = useCallback((e: React.PointerEvent) => {
+    if (!dragState?.isDragging) return;
+    const cellRects = computeCellRects();
+    const { zeroRect, doubleZeroRect } = computeZeroRects();
+    const result = detectDropZone(e.clientX, e.clientY, cellRects, zeroRect, doubleZeroRect);
+    setHighlightedNumbers(new Set());
+    setDropPreview(null);
+    if (result && onDrop) {
+      onDrop(result.betType, dragState.amount);
+    } else if (onDragCancel) {
+      onDragCancel();
+    }
+  }, [dragState, computeCellRects, computeZeroRects, onDrop, onDragCancel]);
+
   const handleNumberClick = (num: number) => {
+    if (dragState?.isDragging) return;
     if (!canBet || selectedAmount <= 0) return;
     onPlaceBet(`straight_${num}`, selectedAmount);
   };
 
   const handleOutsideBet = (betType: string) => {
+    if (dragState?.isDragging) return;
     if (!canBet || selectedAmount <= 0) return;
     onPlaceBet(betType, selectedAmount);
   };
@@ -110,26 +183,62 @@ export default function BettingGrid({
 
   const zeroCellWidth = isMobile ? '44px' : '36px';
 
+  const isHighlighted = (num: number) => highlightedNumbers.has(num);
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1px', userSelect: 'none' }}>
+    <div
+      ref={gridRef}
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerUp}
+      style={{ display: 'flex', flexDirection: 'column', gap: '1px', userSelect: 'none' }}
+    >
+      {/* Drop preview label */}
+      {dragState?.isDragging && dropPreview && (
+        <div style={{
+          position: 'absolute',
+          top: '-24px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          background: 'rgba(0,0,0,0.8)',
+          color: '#fff',
+          padding: '2px 8px',
+          borderRadius: '4px',
+          fontSize: '11px',
+          fontWeight: 600,
+          whiteSpace: 'nowrap',
+          zIndex: 10,
+          pointerEvents: 'none',
+        }}>
+          {dropPreview.label} ({dropPreview.coveredNumbers.join(', ')})
+        </div>
+      )}
+
       {/* Main area: 0/00 | number grid | column bets */}
       <div style={{ display: 'flex', gap: '1px' }}>
         {/* 0 and 00 on the left */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
           <div
+            data-number="0"
             onClick={() => handleNumberClick(0)}
-            onMouseEnter={(e) => { e.currentTarget.style.filter = 'brightness(1.3)'; }}
+            onMouseEnter={(e) => { if (!dragState?.isDragging) e.currentTarget.style.filter = 'brightness(1.3)'; }}
             onMouseLeave={(e) => { e.currentTarget.style.filter = ''; }}
-            style={{ ...cellStyle, ...numCellSize, flex: 1, backgroundColor: numColor(0), width: zeroCellWidth }}
+            style={{
+              ...cellStyle, ...numCellSize, flex: 1, backgroundColor: numColor(0), width: zeroCellWidth,
+              ...(isHighlighted(0) ? { outline: '2px solid var(--accent-warm)', outlineOffset: '-1px', filter: 'brightness(1.4)' } : {}),
+            }}
           >
             0
             {renderChipsOnCell('straight_0')}
           </div>
           <div
+            data-number="37"
             onClick={() => handleNumberClick(37)}
-            onMouseEnter={(e) => { e.currentTarget.style.filter = 'brightness(1.3)'; }}
+            onMouseEnter={(e) => { if (!dragState?.isDragging) e.currentTarget.style.filter = 'brightness(1.3)'; }}
             onMouseLeave={(e) => { e.currentTarget.style.filter = ''; }}
-            style={{ ...cellStyle, ...numCellSize, flex: 1, backgroundColor: numColor(37), width: zeroCellWidth }}
+            style={{
+              ...cellStyle, ...numCellSize, flex: 1, backgroundColor: numColor(37), width: zeroCellWidth,
+              ...(isHighlighted(37) ? { outline: '2px solid var(--accent-warm)', outlineOffset: '-1px', filter: 'brightness(1.4)' } : {}),
+            }}
           >
             00
             {renderChipsOnCell('straight_37')}
@@ -140,13 +249,19 @@ export default function BettingGrid({
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1px', overflowX: isMobile ? 'auto' : undefined, WebkitOverflowScrolling: isMobile ? 'touch' : undefined }}>
           {[topRow, midRow, botRow].map((row, ri) => (
             <div key={ri} style={{ display: 'flex', gap: '1px' }}>
-              {row.map(num => (
+              {row.map((num, ci) => (
                 <div
                   key={num}
+                  data-number={String(num)}
+                  data-row={String(ri)}
+                  data-col={String(ci)}
                   onClick={() => handleNumberClick(num)}
-                  onMouseEnter={(e) => { e.currentTarget.style.filter = 'brightness(1.3)'; }}
+                  onMouseEnter={(e) => { if (!dragState?.isDragging) e.currentTarget.style.filter = 'brightness(1.3)'; }}
                   onMouseLeave={(e) => { e.currentTarget.style.filter = ''; }}
-                  style={{ ...cellStyle, ...numCellSize, backgroundColor: numColor(num) }}
+                  style={{
+                    ...cellStyle, ...numCellSize, backgroundColor: numColor(num),
+                    ...(isHighlighted(num) ? { outline: '2px solid var(--accent-warm)', outlineOffset: '-1px', filter: 'brightness(1.4)' } : {}),
+                  }}
                 >
                   {displayNum(num)}
                   {renderChipsOnCell(`straight_${num}`)}
@@ -162,7 +277,7 @@ export default function BettingGrid({
             <div
               key={betType}
               onClick={() => handleOutsideBet(betType)}
-              onMouseEnter={(e) => { e.currentTarget.style.filter = 'brightness(1.2)'; }}
+              onMouseEnter={(e) => { if (!dragState?.isDragging) e.currentTarget.style.filter = 'brightness(1.2)'; }}
               onMouseLeave={(e) => { e.currentTarget.style.filter = ''; }}
               style={{ ...cellStyle, ...numCellSize, backgroundColor: 'var(--surface-panel-raised)', color: 'var(--text-primary)' }}
             >
@@ -183,7 +298,7 @@ export default function BettingGrid({
           <div
             key={betType}
             onClick={() => handleOutsideBet(betType)}
-            onMouseEnter={(e) => { e.currentTarget.style.filter = 'brightness(1.2)'; }}
+            onMouseEnter={(e) => { if (!dragState?.isDragging) e.currentTarget.style.filter = 'brightness(1.2)'; }}
             onMouseLeave={(e) => { e.currentTarget.style.filter = ''; }}
             style={{
               ...cellStyle,
@@ -215,7 +330,7 @@ export default function BettingGrid({
           <div
             key={betType}
             onClick={() => handleOutsideBet(betType)}
-            onMouseEnter={(e) => { e.currentTarget.style.filter = 'brightness(1.2)'; }}
+            onMouseEnter={(e) => { if (!dragState?.isDragging) e.currentTarget.style.filter = 'brightness(1.2)'; }}
             onMouseLeave={(e) => { e.currentTarget.style.filter = ''; }}
             style={{
               ...cellStyle,

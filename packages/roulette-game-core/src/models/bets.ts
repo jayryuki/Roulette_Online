@@ -3,6 +3,18 @@
 import { isRed, isBlack, DOUBLE_ZERO } from './wheel.js';
 
 /**
+ * Board position map for adjacency validation.
+ * Row 0 = top (3,6,9...36), Row 1 = mid (2,5,8...35), Row 2 = bot (1,4,7...34)
+ * Col 0-11 left to right.
+ */
+const BOARD_POSITION = new Map<number, { row: number; col: number }>();
+for (let col = 0; col < 12; col++) {
+  BOARD_POSITION.set(col * 3 + 3, { row: 0, col });
+  BOARD_POSITION.set(col * 3 + 2, { row: 1, col });
+  BOARD_POSITION.set(col * 3 + 1, { row: 2, col });
+}
+
+/**
  * Bet type string format:
  *   "straight_N"      — single number (0, 1-36, 37=00)
  *   "split_A_B"       — two adjacent numbers
@@ -157,20 +169,45 @@ export function validateBet(bet: BetType): boolean {
       return (n >= 0 && n <= 36) || n === DOUBLE_ZERO;
     }
     case 'split': {
-      return args.length === 2 && args.every(n => (n >= 0 && n <= 36) || n === DOUBLE_ZERO);
+      if (args.length !== 2) return false;
+      const [a, b] = args;
+      if (!((a >= 0 && a <= 36) || a === DOUBLE_ZERO) || !((b >= 0 && b <= 36) || b === DOUBLE_ZERO)) return false;
+      // 0-00 split
+      if ((a === 0 && b === DOUBLE_ZERO) || (a === DOUBLE_ZERO && b === 0)) return true;
+      // 0/00 adjacent to 1,2,3
+      if ((a === 0 || a === DOUBLE_ZERO) && (b === 1 || b === 2 || b === 3)) return true;
+      if ((b === 0 || b === DOUBLE_ZERO) && (a === 1 || a === 2 || a === 3)) return true;
+      const posA = BOARD_POSITION.get(a);
+      const posB = BOARD_POSITION.get(b);
+      if (!posA || !posB) return false;
+      // Horizontal neighbors (same row, adjacent columns)
+      if (posA.row === posB.row && Math.abs(posA.col - posB.col) === 1) return true;
+      // Vertical neighbors (same column, adjacent rows)
+      if (posA.col === posB.col && Math.abs(posA.row - posB.row) === 1) return true;
+      return false;
     }
     case 'street': {
       const start = args[0];
       return start >= 1 && start <= 34 && (start - 1) % 3 === 0;
     }
     case 'corner': {
-      return args.length === 4 && args.every(n => (n >= 1 && n <= 36));
+      if (args.length !== 4) return false;
+      if (!args.every(n => n >= 1 && n <= 36)) return false;
+      const positions = args.map(n => BOARD_POSITION.get(n)).filter(Boolean) as { row: number; col: number }[];
+      if (positions.length !== 4) return false;
+      const rows = positions.map(p => p.row);
+      const cols = positions.map(p => p.col);
+      const minRow = Math.min(...rows), maxRow = Math.max(...rows);
+      const minCol = Math.min(...cols), maxCol = Math.max(...cols);
+      return maxRow - minRow === 1 && maxCol - minCol === 1;
     }
     case 'five':
       return true;
     case 'sixline': {
       const start = args[0];
-      return start >= 1 && start <= 31 && (start - 1) % 3 === 0;
+      const pos = BOARD_POSITION.get(start);
+      if (!pos) return false;
+      return pos.row === 2 && start >= 1 && start <= 31 && (start - 1) % 3 === 0;
     }
     case 'dozen':
       return args[0] >= 1 && args[0] <= 3;

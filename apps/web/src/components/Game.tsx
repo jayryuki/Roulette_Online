@@ -3,6 +3,7 @@ import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import { useRouletteRoom } from '../hooks/useRouletteRoom';
 import { useRouletteSolo } from '../hooks/useRouletteSolo';
 import { useIsMobile } from '../hooks/useIsMobile';
+import { useDragChip } from '../hooks/useDragChip';
 import { Button, ThemeToggle } from '@games/ui';
 import Wheel2D from './Wheel2D';
 import BettingGrid from './BettingGrid';
@@ -11,7 +12,7 @@ import BankrollDisplay from './BankrollDisplay';
 import PlayerSidebar from './PlayerSidebar';
 import HotColdPanel from './HotColdPanel';
 import SettingsPanel from './SettingsPanel';
-import { displayLabel, numberColor } from '@roulette/game-core';
+import { displayLabel, numberColor, CHIP_COLORS } from '@roulette/game-core';
 import { playChipPlace, playWheelSpin, playWin, playLose, toggleMute, getMuteState } from '../lib/sounds.js';
 import type { RouletteGameState } from '../types';
 
@@ -39,6 +40,7 @@ export default function Game({ isSolo = false }: GameProps) {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [muted, setMuted] = useState(getMuteState);
   const prevPhaseRef = useRef<string>('');
+  const { dragState, startDrag, moveDrag, endDrag } = useDragChip();
 
   const roundResult = useMemo(() => {
     if (!gameState?.roundResult) return null;
@@ -87,6 +89,19 @@ export default function Game({ isSolo = false }: GameProps) {
     }
     prevPhaseRef.current = phase;
   }, [gameState?.phase, roundResult, sessionId]);
+
+  // Global pointer handlers for drag-and-drop
+  useEffect(() => {
+    if (!dragState?.isDragging) return;
+    const handleMove = (e: PointerEvent) => moveDrag(e.clientX, e.clientY);
+    const handleUp = () => endDrag();
+    window.addEventListener('pointermove', handleMove);
+    window.addEventListener('pointerup', handleUp);
+    return () => {
+      window.removeEventListener('pointermove', handleMove);
+      window.removeEventListener('pointerup', handleUp);
+    };
+  }, [dragState?.isDragging, moveDrag, endDrag]);
 
 
 
@@ -428,6 +443,13 @@ export default function Game({ isSolo = false }: GameProps) {
               }}
               onRemoveBet={(chipIndex) => send('remove-bet', { chipIndex })}
               isMobile={isMobile}
+              dragState={dragState}
+              onDrop={(betType, amount) => {
+                playChipPlace();
+                send('place-bet', { betType, amount });
+                endDrag();
+              }}
+              onDragCancel={endDrag}
             />
           </div>
 
@@ -450,6 +472,7 @@ export default function Game({ isSolo = false }: GameProps) {
               canBet={canBet}
               hasLastBets={hasLastBets}
               isMobile={isMobile}
+              onStartDrag={(amount, chipColorIndex, x, y) => startDrag(amount, chipColorIndex, x, y)}
             />
           </div>
 
@@ -668,6 +691,32 @@ export default function Game({ isSolo = false }: GameProps) {
             </div>
           </div>
         </>
+      )}
+
+      {/* Ghost chip during drag */}
+      {dragState?.isDragging && (
+        <div style={{
+          position: 'fixed',
+          left: dragState.currentX - 18,
+          top: dragState.currentY - 18,
+          width: '36px',
+          height: '36px',
+          borderRadius: '50%',
+          border: '2px solid white',
+          backgroundColor: CHIP_COLORS[dragState.chipColorIndex]?.hex ?? '#888',
+          color: '#fff',
+          fontWeight: 700,
+          fontSize: '10px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          pointerEvents: 'none',
+          zIndex: 9999,
+          boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+          opacity: 0.9,
+        }}>
+          ${dragState.amount}
+        </div>
       )}
 
       {/* Game over full overlay for solo mode */}
