@@ -26,6 +26,7 @@ function parseState(state: any): RouletteGameState {
       playersMap.set(key, {
         ...value,
         roundHistory: (() => { try { return JSON.parse(value.roundHistory || '[]'); } catch { return []; } })(),
+        lastBets: value.lastBets || '',
       });
     }
   }

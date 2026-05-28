@@ -45,6 +45,7 @@ export function useRouletteSolo() {
       chipColor: 0,
       totalBetThisRound: s.totalBetThisRound,
       roundHistory: s.roundHistory,
+      lastBets: '',
     });
 
     return {

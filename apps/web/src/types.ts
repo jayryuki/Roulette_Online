@@ -18,6 +18,7 @@ export interface PlayerData {
   chipColor: number;
   totalBetThisRound: number;
   roundHistory: number[];
+  lastBets: string;
 }
 
 export interface ChatMessage {
