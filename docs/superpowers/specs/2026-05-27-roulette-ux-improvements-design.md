@@ -4,7 +4,7 @@ Date: 2026-05-27
 
 ## Overview
 
-Six changes to the roulette game: five UX improvements and one bug fix.
+Six changes to the roulette game: five UX improvements and one bug fix, plus an inactivity-based betting timer.
 
 ---
 
@@ -104,7 +104,17 @@ Move the bankroll display from the top bar (solo) / sidebar (multiplayer) to a p
 
 ---
 
-## 6. Remove Players Immediately on Disconnect
+## 6. Inactivity-Based Betting Timer
+
+**Server**: Change the betting timer from a fixed countdown to an inactivity timer. When the betting phase starts, do NOT start the countdown immediately. Instead, start a 30-second inactivity timer. Any `place-bet` or `repeat-last-bet` message resets this inactivity timer. Once 30 seconds pass with no bets placed, the betting phase closes and the wheel spins.
+
+The `betTime` setting (default 30s) controls the inactivity duration, not a fixed phase length. There is no maximum phase duration — as long as players keep placing chips, the phase continues.
+
+**Client**: Display the timer only once the inactivity countdown starts (after the first period of no betting activity). While players are actively placing chips, show "Place your bets" without a countdown. When the timer starts, show the countdown as today. Any bet placement resets the displayed timer.
+
+---
+
+## 7. Remove Players Immediately on Disconnect
 
 **Server**: In `RouletteRoom.onLeave`, remove the `allowReconnection` logic. Always call `cleanupPlayer(client)` regardless of the `consented` flag. Remove the reconnection token storage in the client (`useRouletteRoom.ts`).
 
@@ -114,9 +124,10 @@ Move the bankroll display from the top bar (solo) / sidebar (multiplayer) to a p
 
 ## Implementation Order
 
-1. Bug fix (#6) — simplest, unblocks testing
-2. Horizontal board (#2) — layout foundation for draggable chips
-3. Cash display (#4) — independent, quick
-4. Win/loss history (#5) — builds on cash display
-5. Repeat last bet (#1) — server + client, moderate
-6. Draggable chips + multi-number bets (#3) — most complex, builds on horizontal layout
+1. Bug fix (#7) — simplest, unblocks testing
+2. Inactivity timer (#6) — server timer change, independent
+3. Horizontal board (#2) — layout foundation for draggable chips
+4. Cash display (#4) — independent, quick
+5. Win/loss history (#5) — builds on cash display
+6. Repeat last bet (#1) — server + client, moderate
+7. Draggable chips + multi-number bets (#3) — most complex, builds on horizontal layout
