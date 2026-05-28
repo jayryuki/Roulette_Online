@@ -17,9 +17,13 @@ interface PendingDrag {
 
 const DRAG_THRESHOLD = 5;
 
+// Module-level flag to suppress click after a completed drag
+let suppressClickUntil = 0;
+
 export function useDragChip() {
   const [dragState, setDragState] = useState<DragState | null>(null);
   const pendingRef = useRef<PendingDrag | null>(null);
+  const wasDraggingRef = useRef(false);
 
   const startDrag = useCallback((amount: number, chipColorIndex: number, x: number, y: number) => {
     pendingRef.current = { amount, chipColorIndex, startX: x, startY: y };
@@ -33,6 +37,7 @@ export function useDragChip() {
       if (Math.sqrt(dx * dx + dy * dy) > DRAG_THRESHOLD) {
         setDragState({ isDragging: true, amount: pending.amount, currentX: x, currentY: y, chipColorIndex: pending.chipColorIndex });
         pendingRef.current = null;
+        wasDraggingRef.current = true;
       }
       return;
     }
@@ -40,11 +45,21 @@ export function useDragChip() {
   }, []);
 
   const endDrag = useCallback(() => {
+    if (dragState?.isDragging || wasDraggingRef.current) {
+      suppressClickUntil = Date.now() + 300;
+    }
     pendingRef.current = null;
+    wasDraggingRef.current = false;
     setDragState(null);
+  }, [dragState?.isDragging]);
+
+  const wasDragging = useCallback(() => {
+    if (Date.now() < suppressClickUntil) {
+      suppressClickUntil = 0;
+      return true;
+    }
+    return false;
   }, []);
 
-  const isPending = useCallback(() => pendingRef.current !== null, []);
-
-  return { dragState, startDrag, moveDrag, endDrag, isPending };
+  return { dragState, startDrag, moveDrag, endDrag, wasDragging };
 }

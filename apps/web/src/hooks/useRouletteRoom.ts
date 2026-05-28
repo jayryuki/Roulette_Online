@@ -12,7 +12,6 @@ const SS_DISPLAY_NAME = 'roulette_displayName';
 let sharedClient: Client | null = null;
 let sharedRoom: Room<RouletteGameState> | null = null;
 let connectingLock = false;
-let hasJoined = false;
 
 function getClient(): Client {
   if (!sharedClient) {
@@ -98,7 +97,6 @@ export function useRouletteRoom() {
       setGameState(null);
       setSessionId(null);
       sharedRoom = null;
-      hasJoined = false;
     });
 
     room.onError((code, msg) => {
@@ -123,10 +121,10 @@ export function useRouletteRoom() {
   }, []);
 
   const joinRoom = useCallback(async (roomCode: string, displayName: string) => {
-    // Prevent double-join from React StrictMode remount
-    if (connectingLock || hasJoined) return null;
-    // Already connected to this room
+    // Already connected to a room — return it
     if (sharedRoom) return sharedRoom;
+    // Prevent concurrent join attempts
+    if (connectingLock) return null;
 
     connectingLock = true;
     try {
@@ -139,7 +137,6 @@ export function useRouletteRoom() {
       const client = getClient();
       const room = await client.joinById(roomId, { displayName });
       sharedRoom = room;
-      hasJoined = true;
       setConnected(true);
       setSessionId(room.sessionId);
       try {
@@ -168,7 +165,6 @@ export function useRouletteRoom() {
     if (sharedRoom) {
       try { sharedRoom.leave(); } catch {}
       sharedRoom = null;
-      hasJoined = false;
     }
     setConnected(false);
     setGameState(null);

@@ -7,6 +7,7 @@ interface ChipTrayProps {
   hasLastBets: boolean;
   isMobile?: boolean;
   onStartDrag?: (amount: number, chipColorIndex: number, x: number, y: number) => void;
+  wasDragging?: () => boolean;
 }
 
 const DENOMINATIONS = [1, 5, 25, 100, 500];
@@ -19,7 +20,7 @@ const CHIP_STYLES: Record<number, { bg: string; text: string; border: string }> 
   500: { bg: 'var(--accent-warm)', text: '#ffffff', border: '#B85C3A' },
 };
 
-export default function ChipTray({ selectedAmount, onSelectAmount, onClearBets, onRepeatBet, canBet, hasLastBets, isMobile = false, onStartDrag }: ChipTrayProps) {
+export default function ChipTray({ selectedAmount, onSelectAmount, onClearBets, onRepeatBet, canBet, hasLastBets, isMobile = false, onStartDrag, wasDragging }: ChipTrayProps) {
   const chipSize = isMobile ? 44 : 36;
   return (
     <div style={{
@@ -38,12 +39,15 @@ export default function ChipTray({ selectedAmount, onSelectAmount, onClearBets, 
           return (
             <button
               key={denom}
-              onClick={() => onSelectAmount(denom)}
               onPointerDown={(e) => {
                 if (canBet && onStartDrag) {
                   const colorIndex = DENOMINATIONS.indexOf(denom);
                   onStartDrag(denom, colorIndex, e.clientX, e.clientY);
                 }
+              }}
+              onClick={() => {
+                if (wasDragging && wasDragging()) return;
+                onSelectAmount(denom);
               }}
               disabled={!canBet}
               style={{

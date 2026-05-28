@@ -4,6 +4,7 @@ import { useRouletteRoom } from '../hooks/useRouletteRoom';
 import { useRouletteSolo } from '../hooks/useRouletteSolo';
 import { useIsMobile } from '../hooks/useIsMobile';
 import { useDragChip } from '../hooks/useDragChip';
+import { detectDropZone } from '../lib/dropZones';
 import { Button, ThemeToggle } from '@games/ui';
 import Wheel2D from './Wheel2D';
 import BettingGrid from './BettingGrid';
@@ -39,7 +40,7 @@ export default function Game({ isSolo = false }: GameProps) {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [muted, setMuted] = useState(getMuteState);
   const prevPhaseRef = useRef<string>('');
-  const { dragState, startDrag, moveDrag, endDrag } = useDragChip();
+  const { dragState, startDrag, moveDrag, endDrag, wasDragging } = useDragChip();
 
   const roundResult = useMemo(() => {
     if (!gameState?.roundResult) return null;
@@ -91,11 +92,37 @@ export default function Game({ isSolo = false }: GameProps) {
   useEffect(() => {
     const handleMove = (e: PointerEvent) => moveDrag(e.clientX, e.clientY);
     const handleUp = (e: PointerEvent) => {
-      // Only cancel if the up event isn't inside the grid
-      const gridEl = (e.target as HTMLElement)?.closest('[data-grid]');
-      if (!gridEl) {
+      if (!dragState?.isDragging) {
         endDrag();
+        return;
       }
+      // Detect drop zone from the grid
+      const gridEl = document.querySelector('[data-grid]');
+      if (gridEl) {
+        const cells = gridEl.querySelectorAll('[data-number]');
+        const cellRects = Array.from(cells).map(el => {
+          const rect = el.getBoundingClientRect();
+          return {
+            number: Number(el.getAttribute('data-number')),
+            row: Number(el.getAttribute('data-row')),
+            col: Number(el.getAttribute('data-col')),
+            x: rect.left,
+            y: rect.top,
+            width: rect.width,
+            height: rect.height,
+          };
+        });
+        const zeroEl = gridEl.querySelector('[data-number="0"]');
+        const doubleZeroEl = gridEl.querySelector('[data-number="37"]');
+        const zeroRect = zeroEl ? zeroEl.getBoundingClientRect() : undefined;
+        const doubleZeroRect = doubleZeroEl ? doubleZeroEl.getBoundingClientRect() : undefined;
+        const result = detectDropZone(e.clientX, e.clientY, cellRects, zeroRect, doubleZeroRect);
+        if (result) {
+          playChipPlace();
+          send('place-bet', { betType: result.betType, amount: dragState.amount });
+        }
+      }
+      endDrag();
     };
     window.addEventListener('pointermove', handleMove);
     window.addEventListener('pointerup', handleUp);
@@ -103,7 +130,7 @@ export default function Game({ isSolo = false }: GameProps) {
       window.removeEventListener('pointermove', handleMove);
       window.removeEventListener('pointerup', handleUp);
     };
-  }, [moveDrag, endDrag]);
+  }, [dragState, moveDrag, endDrag, send]);
 
 
 
@@ -469,12 +496,8 @@ export default function Game({ isSolo = false }: GameProps) {
               onRemoveBet={(chipIndex) => send('remove-bet', { chipIndex })}
               isMobile={isMobile}
               dragState={dragState}
-              onDrop={(betType, amount) => {
-                playChipPlace();
-                send('place-bet', { betType, amount });
-                endDrag();
-              }}
-              onDragCancel={endDrag}
+              onDrop={() => {}}
+              onDragCancel={() => {}}
             />
           </div>
 
@@ -498,6 +521,7 @@ export default function Game({ isSolo = false }: GameProps) {
               hasLastBets={hasLastBets}
               isMobile={isMobile}
               onStartDrag={(amount, chipColorIndex, x, y) => startDrag(amount, chipColorIndex, x, y)}
+              wasDragging={wasDragging}
             />
           </div>
 
