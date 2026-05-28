@@ -1,4 +1,4 @@
-import { useRef, useState, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { Client, Room } from 'colyseus.js';
 import type { RouletteGameState } from '../types';
 
@@ -10,7 +10,9 @@ const SS_DISPLAY_NAME = 'roulette_displayName';
 
 // Module-level client singleton — survives React StrictMode remounts
 let sharedClient: Client | null = null;
+let sharedRoom: Room<RouletteGameState> | null = null;
 let connectingLock = false;
+let hasJoined = false;
 
 function getClient(): Client {
   if (!sharedClient) {
@@ -80,7 +82,6 @@ function clearSession() {
 }
 
 export function useRouletteRoom() {
-  const roomRef = useRef<Room<RouletteGameState> | null>(null);
   const [gameState, setGameState] = useState<RouletteGameState | null>(null);
   const [connected, setConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -96,7 +97,8 @@ export function useRouletteRoom() {
       setConnected(false);
       setGameState(null);
       setSessionId(null);
-      roomRef.current = null;
+      sharedRoom = null;
+      hasJoined = false;
     });
 
     room.onError((code, msg) => {
@@ -122,9 +124,9 @@ export function useRouletteRoom() {
 
   const joinRoom = useCallback(async (roomCode: string, displayName: string) => {
     // Prevent double-join from React StrictMode remount
-    if (connectingLock) return null;
+    if (connectingLock || hasJoined) return null;
     // Already connected to this room
-    if (roomRef.current) return roomRef.current;
+    if (sharedRoom) return sharedRoom;
 
     connectingLock = true;
     try {
@@ -136,7 +138,8 @@ export function useRouletteRoom() {
 
       const client = getClient();
       const room = await client.joinById(roomId, { displayName });
-      roomRef.current = room;
+      sharedRoom = room;
+      hasJoined = true;
       setConnected(true);
       setSessionId(room.sessionId);
       try {
@@ -157,14 +160,15 @@ export function useRouletteRoom() {
   }, [setupRoomListeners]);
 
   const send = useCallback((type: string, data: any = {}) => {
-    roomRef.current?.send(type, data);
+    sharedRoom?.send(type, data);
   }, []);
 
   const leave = useCallback(() => {
     clearSession();
-    if (roomRef.current) {
-      try { roomRef.current.leave(); } catch {}
-      roomRef.current = null;
+    if (sharedRoom) {
+      try { sharedRoom.leave(); } catch {}
+      sharedRoom = null;
+      hasJoined = false;
     }
     setConnected(false);
     setGameState(null);

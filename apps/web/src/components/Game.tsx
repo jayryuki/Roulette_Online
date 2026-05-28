@@ -34,7 +34,6 @@ export default function Game({ isSolo = false }: GameProps) {
   const { gameState, connected, error, joinRoom, send, leave, sessionId } = hook;
 
   const [selectedAmount, setSelectedAmount] = useState(25);
-  const hasJoinedRef = useRef(false);
   const isMobile = useIsMobile();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -49,8 +48,7 @@ export default function Game({ isSolo = false }: GameProps) {
 
   // Multiplayer: join room on mount
   useEffect(() => {
-    if (!isSolo && roomCode && !hasJoinedRef.current) {
-      hasJoinedRef.current = true;
+    if (!isSolo && roomCode) {
       joinRoom(roomCode, displayName).then(room => {
         if (!room) navigate('/');
       });
@@ -59,8 +57,7 @@ export default function Game({ isSolo = false }: GameProps) {
 
   // Solo: initialize on mount
   useEffect(() => {
-    if (isSolo && !hasJoinedRef.current) {
-      hasJoinedRef.current = true;
+    if (isSolo) {
       joinRoom('SOLO', displayName);
     }
   }, [isSolo, joinRoom, displayName]);
@@ -92,7 +89,6 @@ export default function Game({ isSolo = false }: GameProps) {
 
   // Global pointer handlers for drag-and-drop
   useEffect(() => {
-    if (!dragState?.isDragging) return;
     const handleMove = (e: PointerEvent) => moveDrag(e.clientX, e.clientY);
     const handleUp = () => endDrag();
     window.addEventListener('pointermove', handleMove);
@@ -101,7 +97,7 @@ export default function Game({ isSolo = false }: GameProps) {
       window.removeEventListener('pointermove', handleMove);
       window.removeEventListener('pointerup', handleUp);
     };
-  }, [dragState?.isDragging, moveDrag, endDrag]);
+  }, [moveDrag, endDrag]);
 
 
 
@@ -198,36 +194,59 @@ export default function Game({ isSolo = false }: GameProps) {
             </button>
           )}
 
-          {/* Multiplayer: Timer during betting phase */}
+          {/* Multiplayer: Spin button + Timer during betting phase */}
           {!isSolo && phase === 'BETTING' && (
-            gameState.timerSeconds > 0 ? (
-              <span style={{
-                fontFamily: "'Inter', sans-serif",
-                fontWeight: 700,
-                fontSize: '1rem',
-                color: 'rgba(255,255,255,0.95)',
-                background: 'rgba(0,0,0,0.3)',
-                padding: '0.25rem 0.625rem',
-                borderRadius: '6px',
-                minWidth: '2.5rem',
-                textAlign: 'center',
-              }}>
-                {gameState.timerSeconds}
-              </span>
-            ) : (
-              <span style={{
-                fontFamily: "'Inter', sans-serif",
-                fontWeight: 600,
-                fontSize: '0.75rem',
-                color: 'var(--success)',
-                background: 'rgba(0,0,0,0.3)',
-                padding: '0.25rem 0.625rem',
-                borderRadius: '6px',
-                letterSpacing: '0.05em',
-              }}>
-                PLACE YOUR BETS
-              </span>
-            )
+            <>
+              <button
+                onClick={() => send('spin-now')}
+                disabled={(gameState.chips?.length ?? 0) === 0}
+                style={{
+                  padding: isMobile ? '0.5rem 1rem' : '0.375rem 1.25rem',
+                  background: 'var(--accent-warm)',
+                  color: '#ffffff',
+                  border: 'none',
+                  borderRadius: '6px',
+                  fontSize: '0.875rem',
+                  fontWeight: 700,
+                  cursor: (gameState.chips?.length ?? 0) > 0 ? 'pointer' : 'not-allowed',
+                  fontFamily: "'Inter', sans-serif",
+                  letterSpacing: '0.05em',
+                  opacity: (gameState.chips?.length ?? 0) > 0 ? 1 : 0.5,
+                  transition: 'opacity 120ms',
+                  minHeight: isMobile ? '44px' : undefined,
+                }}
+              >
+                SPIN
+              </button>
+              {gameState.timerSeconds > 0 ? (
+                <span style={{
+                  fontFamily: "'Inter', sans-serif",
+                  fontWeight: 700,
+                  fontSize: '1rem',
+                  color: 'rgba(255,255,255,0.95)',
+                  background: 'rgba(0,0,0,0.3)',
+                  padding: '0.25rem 0.625rem',
+                  borderRadius: '6px',
+                  minWidth: '2.5rem',
+                  textAlign: 'center',
+                }}>
+                  {gameState.timerSeconds}
+                </span>
+              ) : (
+                <span style={{
+                  fontFamily: "'Inter', sans-serif",
+                  fontWeight: 600,
+                  fontSize: '0.75rem',
+                  color: 'var(--success)',
+                  background: 'rgba(0,0,0,0.3)',
+                  padding: '0.25rem 0.625rem',
+                  borderRadius: '6px',
+                  letterSpacing: '0.05em',
+                }}>
+                  PLACE YOUR BETS
+                </span>
+              )}
+            </>
           )}
 
           {/* Room code */}

@@ -41,7 +41,6 @@ export default function ChipTray({ selectedAmount, onSelectAmount, onClearBets, 
               onClick={() => onSelectAmount(denom)}
               onPointerDown={(e) => {
                 if (canBet && onStartDrag) {
-                  e.preventDefault();
                   const colorIndex = DENOMINATIONS.indexOf(denom);
                   onStartDrag(denom, colorIndex, e.clientX, e.clientY);
                 }
