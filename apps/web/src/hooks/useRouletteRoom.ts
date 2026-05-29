@@ -1,24 +1,12 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { Client, Room } from 'colyseus.js';
 import type { RouletteGameState } from '../types';
 
-const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-const ENDPOINT = `${protocol}//${window.location.host}`;
+const colyseusUrl = import.meta.env.DEV
+  ? 'ws://localhost:2500'
+  : `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}`;
 
-const SS_ROOM_CODE = 'roulette_roomCode';
-const SS_DISPLAY_NAME = 'roulette_displayName';
-
-// Module-level client singleton — survives React StrictMode remounts
-let sharedClient: Client | null = null;
-let sharedRoom: Room<RouletteGameState> | null = null;
-let connectingLock = false;
-
-function getClient(): Client {
-  if (!sharedClient) {
-    sharedClient = new Client(ENDPOINT);
-  }
-  return sharedClient;
-}
+const colyseusClient = new Client(colyseusUrl);
 
 function parseState(state: any): RouletteGameState {
   const playersMap = new Map<string, any>();
@@ -73,35 +61,47 @@ function parseState(state: any): RouletteGameState {
   };
 }
 
-function clearSession() {
-  try {
-    sessionStorage.removeItem(SS_ROOM_CODE);
-    sessionStorage.removeItem(SS_DISPLAY_NAME);
-  } catch {}
-}
-
 export function useRouletteRoom() {
   const [gameState, setGameState] = useState<RouletteGameState | null>(null);
   const [connected, setConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
+  const roomRef = useRef<Room<RouletteGameState> | null>(null);
+  const joinedRef = useRef(false);
 
-  const setupRoomListeners = useCallback((room: Room<RouletteGameState>) => {
-    room.onStateChange((state: any) => {
-      setGameState(parseState(state));
-    });
+  const joinRoom = useCallback(async (roomCode: string, displayName: string) => {
+    if (joinedRef.current) return roomRef.current;
+    joinedRef.current = true;
 
-    room.onLeave(() => {
-      clearSession();
-      setConnected(false);
-      setGameState(null);
-      setSessionId(null);
-      sharedRoom = null;
-    });
+    try {
+      setError(null);
 
-    room.onError((code, msg) => {
-      setError(`Room error: ${msg}`);
-    });
+      const lookup = await fetch(`/api/rooms/${roomCode}`);
+      if (!lookup.ok) throw new Error('Room not found');
+      const { roomId } = await lookup.json();
+
+      const room = await colyseusClient.joinById(roomId, { displayName });
+      roomRef.current = room;
+      setConnected(true);
+      setSessionId(room.sessionId);
+
+      room.onStateChange((state: any) => {
+        setGameState(parseState(state));
+      });
+
+      room.onError((code: number, msg?: string) => {
+        setError(`Room error: ${msg}`);
+      });
+
+      // Force initial state parse
+      setGameState(parseState(room.state));
+
+      return room;
+    } catch (e: any) {
+      joinedRef.current = false;
+      setError(e.message);
+      return null;
+    }
   }, []);
 
   const createRoom = useCallback(async (displayName: string) => {
@@ -120,55 +120,25 @@ export function useRouletteRoom() {
     }
   }, []);
 
-  const joinRoom = useCallback(async (roomCode: string, displayName: string) => {
-    // Already connected to a room — return it
-    if (sharedRoom) return sharedRoom;
-    // Prevent concurrent join attempts
-    if (connectingLock) return null;
-
-    connectingLock = true;
-    try {
-      setError(null);
-
-      const lookup = await fetch(`/api/rooms/${roomCode}`);
-      if (!lookup.ok) throw new Error('Room not found');
-      const { roomId } = await lookup.json();
-
-      const client = getClient();
-      const room = await client.joinById(roomId, { displayName });
-      sharedRoom = room;
-      setConnected(true);
-      setSessionId(room.sessionId);
-      try {
-        sessionStorage.setItem(SS_ROOM_CODE, roomCode);
-        sessionStorage.setItem(SS_DISPLAY_NAME, displayName);
-      } catch {}
-      setupRoomListeners(room);
-      // Force initial state parse
-      setGameState(parseState(room.state));
-
-      return room;
-    } catch (e: any) {
-      setError(e.message);
-      return null;
-    } finally {
-      connectingLock = false;
-    }
-  }, [setupRoomListeners]);
-
   const send = useCallback((type: string, data: any = {}) => {
-    sharedRoom?.send(type, data);
+    roomRef.current?.send(type, data);
   }, []);
 
   const leave = useCallback(() => {
-    clearSession();
-    if (sharedRoom) {
-      try { sharedRoom.leave(); } catch {}
-      sharedRoom = null;
+    if (roomRef.current) {
+      try { roomRef.current.leave(); } catch {}
+      roomRef.current = null;
     }
+    joinedRef.current = false;
     setConnected(false);
     setGameState(null);
     setSessionId(null);
+  }, []);
+
+  // Detach room ref so unmount doesn't leave the room.
+  // Used when navigating from lobby to game screen.
+  const detachRoom = useCallback(() => {
+    roomRef.current = null;
   }, []);
 
   return {
@@ -179,6 +149,7 @@ export function useRouletteRoom() {
     joinRoom,
     send,
     leave,
+    detachRoom,
     sessionId,
   };
 }

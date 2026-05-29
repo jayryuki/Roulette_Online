@@ -17,13 +17,14 @@ interface PendingDrag {
 
 const DRAG_THRESHOLD = 5;
 
-// Module-level flag to suppress click after a completed drag
 let suppressClickUntil = 0;
 
 export function useDragChip() {
   const [dragState, setDragState] = useState<DragState | null>(null);
   const pendingRef = useRef<PendingDrag | null>(null);
-  const wasDraggingRef = useRef(false);
+  // Ref that always mirrors the latest dragState so global event handlers
+  // can read the current value without stale closures.
+  const dragRef = useRef<DragState | null>(null);
 
   const startDrag = useCallback((amount: number, chipColorIndex: number, x: number, y: number) => {
     pendingRef.current = { amount, chipColorIndex, startX: x, startY: y };
@@ -35,23 +36,28 @@ export function useDragChip() {
       const dx = x - pending.startX;
       const dy = y - pending.startY;
       if (Math.sqrt(dx * dx + dy * dy) > DRAG_THRESHOLD) {
-        setDragState({ isDragging: true, amount: pending.amount, currentX: x, currentY: y, chipColorIndex: pending.chipColorIndex });
+        const newState = { isDragging: true, amount: pending.amount, currentX: x, currentY: y, chipColorIndex: pending.chipColorIndex };
+        dragRef.current = newState;
+        setDragState(newState);
         pendingRef.current = null;
-        wasDraggingRef.current = true;
       }
       return;
     }
-    setDragState(prev => prev ? { ...prev, currentX: x, currentY: y } : null);
+    if (dragRef.current?.isDragging) {
+      const newState = { ...dragRef.current, currentX: x, currentY: y };
+      dragRef.current = newState;
+      setDragState(newState);
+    }
   }, []);
 
   const endDrag = useCallback(() => {
-    if (dragState?.isDragging || wasDraggingRef.current) {
+    if (dragRef.current?.isDragging) {
       suppressClickUntil = Date.now() + 300;
     }
     pendingRef.current = null;
-    wasDraggingRef.current = false;
+    dragRef.current = null;
     setDragState(null);
-  }, [dragState?.isDragging]);
+  }, []);
 
   const wasDragging = useCallback(() => {
     if (Date.now() < suppressClickUntil) {
@@ -61,5 +67,5 @@ export function useDragChip() {
     return false;
   }, []);
 
-  return { dragState, startDrag, moveDrag, endDrag, wasDragging };
+  return { dragState, dragRef, startDrag, moveDrag, endDrag, wasDragging };
 }

@@ -32,7 +32,7 @@ export default function Game({ isSolo = false }: GameProps) {
   const soloHook = useRouletteSolo();
 
   const hook = isSolo ? soloHook : multiHook;
-  const { gameState, connected, error, joinRoom, send, leave, sessionId } = hook;
+  const { gameState, connected, error, joinRoom, send, leave, detachRoom, sessionId } = hook;
 
   const [selectedAmount, setSelectedAmount] = useState(25);
   const isMobile = useIsMobile();
@@ -40,7 +40,7 @@ export default function Game({ isSolo = false }: GameProps) {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [muted, setMuted] = useState(getMuteState);
   const prevPhaseRef = useRef<string>('');
-  const { dragState, startDrag, moveDrag, endDrag, wasDragging } = useDragChip();
+  const { dragState, dragRef, startDrag, moveDrag, endDrag, wasDragging } = useDragChip();
 
   const roundResult = useMemo(() => {
     if (!gameState?.roundResult) return null;
@@ -50,11 +50,12 @@ export default function Game({ isSolo = false }: GameProps) {
   // Multiplayer: join room on mount
   useEffect(() => {
     if (!isSolo && roomCode) {
+      detachRoom(); // prevent unmount from leaving the room
       joinRoom(roomCode, displayName).then(room => {
         if (!room) navigate('/');
       });
     }
-  }, [isSolo, roomCode, joinRoom, displayName, navigate]);
+  }, [isSolo, roomCode, joinRoom, displayName, navigate, detachRoom]);
 
   // Solo: initialize on mount
   useEffect(() => {
@@ -64,9 +65,6 @@ export default function Game({ isSolo = false }: GameProps) {
   }, [isSolo, joinRoom, displayName]);
 
   // NOTE: We intentionally do NOT call leave() on beforeunload.
-  // On page refresh, we want the reconnection token to remain in
-  // sessionStorage so the player can auto-rejoin. The server's
-  // allowReconnection() keeps the session alive for 60 seconds.
   // leave() is only called on explicit "Leave" button click.
 
   // Sound effects
@@ -92,7 +90,9 @@ export default function Game({ isSolo = false }: GameProps) {
   useEffect(() => {
     const handleMove = (e: PointerEvent) => moveDrag(e.clientX, e.clientY);
     const handleUp = (e: PointerEvent) => {
-      if (!dragState?.isDragging) {
+      // Use dragRef (not dragState) to avoid stale closure
+      const current = dragRef.current;
+      if (!current?.isDragging) {
         endDrag();
         return;
       }
@@ -119,7 +119,7 @@ export default function Game({ isSolo = false }: GameProps) {
         const result = detectDropZone(e.clientX, e.clientY, cellRects, zeroRect, doubleZeroRect);
         if (result) {
           playChipPlace();
-          send('place-bet', { betType: result.betType, amount: dragState.amount });
+          send('place-bet', { betType: result.betType, amount: current.amount });
         }
       }
       endDrag();

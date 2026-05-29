@@ -295,6 +295,7 @@ export function useRouletteSolo() {
     joinRoom,
     send,
     leave,
+    detachRoom: () => {},
     sessionId: SOLO_SESSION_ID,
   };
 }
