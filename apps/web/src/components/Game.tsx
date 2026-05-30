@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useRouletteRoom } from '../hooks/useRouletteRoom';
 import { useRouletteSolo } from '../hooks/useRouletteSolo';
 import { useIsMobile } from '../hooks/useIsMobile';
@@ -12,7 +12,6 @@ import ChipTray from './ChipTray';
 import BankrollDisplay from './BankrollDisplay';
 import PlayerSidebar from './PlayerSidebar';
 import HotColdPanel from './HotColdPanel';
-import SettingsPanel from './SettingsPanel';
 import { displayLabel, numberColor, CHIP_COLORS } from '@roulette/game-core';
 import { playChipPlace, playWheelSpin, playWin, playLose, toggleMute, getMuteState } from '../lib/sounds.js';
 import type { RouletteGameState } from '../types';
@@ -22,22 +21,19 @@ interface GameProps {
 }
 
 export default function Game({ isSolo = false }: GameProps) {
-  const { roomCode } = useParams<{ roomCode: string }>();
-  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const displayName = searchParams.get('name') || (() => { try { return sessionStorage.getItem('roulette_displayName') || 'Player'; } catch { return 'Player'; } })();
+  const displayName = (() => { try { return localStorage.getItem('roulette_displayName') || 'Player'; } catch { return 'Player'; } })();
 
   // Both hooks are always called (React rules of hooks), but only one is used based on mode
   const multiHook = useRouletteRoom();
   const soloHook = useRouletteSolo();
 
   const hook = isSolo ? soloHook : multiHook;
-  const { gameState, connected, error, joinRoom, send, leave, detachRoom, sessionId } = hook;
+  const { gameState, connected, error, autoJoin, send, leave, detachRoom, sessionId } = hook;
 
   const [selectedAmount, setSelectedAmount] = useState(25);
   const isMobile = useIsMobile();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [settingsOpen, setSettingsOpen] = useState(false);
   const [muted, setMuted] = useState(getMuteState);
   const prevPhaseRef = useRef<string>('');
   const { dragState, dragRef, startDrag, moveDrag, endDrag, wasDragging } = useDragChip();
@@ -49,20 +45,20 @@ export default function Game({ isSolo = false }: GameProps) {
 
   // Multiplayer: join room on mount
   useEffect(() => {
-    if (!isSolo && roomCode) {
+    if (!isSolo) {
       detachRoom(); // prevent unmount from leaving the room
-      joinRoom(roomCode, displayName).then(room => {
+      autoJoin(displayName).then(room => {
         if (!room) navigate('/');
       });
     }
-  }, [isSolo, roomCode, joinRoom, displayName, navigate, detachRoom]);
+  }, [isSolo, autoJoin, displayName, navigate, detachRoom]);
 
   // Solo: initialize on mount
   useEffect(() => {
     if (isSolo) {
-      joinRoom('SOLO', displayName);
+      autoJoin(displayName);
     }
-  }, [isSolo, joinRoom, displayName]);
+  }, [isSolo, autoJoin, displayName]);
 
   // NOTE: We intentionally do NOT call leave() on beforeunload.
   // leave() is only called on explicit "Leave" button click.
@@ -143,16 +139,12 @@ export default function Game({ isSolo = false }: GameProps) {
     setMuted(toggleMute());
   }, []);
 
-  const handleUpdateSettings = useCallback((settings: Partial<{ minBet: number; maxBet: number; betTime: number; maxPlayers: number }>) => {
-    send('update-settings', settings);
-  }, [send]);
-
   // Loading/connecting state
   if (!gameState || !connected) {
     return (
       <div style={{ height: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--surface-table)' }}>
         <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.875rem' }}>
-          {isSolo ? 'Starting solo game...' : `Connecting to room ${roomCode}...`}
+          {isSolo ? 'Starting solo game...' : 'Connecting...'}
         </div>
       </div>
     );
@@ -282,19 +274,6 @@ export default function Game({ isSolo = false }: GameProps) {
             </>
           )}
 
-          {/* Room code */}
-          {!isSolo && (
-            <div style={{
-              fontFamily: "'Inter', sans-serif",
-              fontWeight: 600,
-              letterSpacing: '0.15em',
-              color: 'rgba(255,255,255,0.9)',
-              fontSize: '0.875rem',
-            }}>
-              {gameState.roomCode}
-            </div>
-          )}
-
           {/* Phase badge */}
           {!isMobile && (
             <span style={{
@@ -315,31 +294,6 @@ export default function Game({ isSolo = false }: GameProps) {
             }}>
               {phase === 'BETTING' ? 'Place Bets' : phase === 'SPINNING' ? 'Spinning' : phase === 'SETTLEMENT' ? 'Result' : phase}
             </span>
-          )}
-
-          {/* Settings gear — multiplayer only */}
-          {!isSolo && myPlayer && (
-            <button
-              onClick={() => setSettingsOpen(true)}
-              style={{
-                width: isMobile ? '44px' : '32px',
-                height: isMobile ? '44px' : '32px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                background: 'rgba(255,255,255,0.1)',
-                border: 'none',
-                borderRadius: '8px',
-                color: 'rgba(255,255,255,0.8)',
-                fontSize: isMobile ? '1.125rem' : '0.9375rem',
-                cursor: 'pointer',
-                flexShrink: 0,
-              }}
-              title="Room Settings"
-              aria-label="Room Settings"
-            >
-              ⚙
-            </button>
           )}
 
           {/* Mute toggle */}
@@ -392,22 +346,6 @@ export default function Game({ isSolo = false }: GameProps) {
           <ThemeToggle style={isMobile ? { minHeight: '44px', minWidth: '44px' } : undefined} />
         </div>
       </div>
-
-      {/* Settings panel overlay */}
-      {settingsOpen && gameState && (
-        <SettingsPanel
-          current={{
-            minBet: gameState.minBet,
-            maxBet: gameState.maxBet,
-            betTime: gameState.betTime,
-            maxPlayers: gameState.maxPlayers,
-          }}
-          isHost={!!myPlayer?.isHost}
-          onUpdate={handleUpdateSettings}
-          onClose={() => setSettingsOpen(false)}
-          isMobile={isMobile}
-        />
-      )}
 
       {/* Main content */}
       <div style={{
