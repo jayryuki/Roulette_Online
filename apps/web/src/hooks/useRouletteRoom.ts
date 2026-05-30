@@ -69,16 +69,21 @@ export function useRouletteRoom() {
   const roomRef = useRef<Room<RouletteGameState> | null>(null);
   const joinedRef = useRef(false);
 
-  const joinRoom = useCallback(async (roomCode: string, displayName: string) => {
+  const autoJoin = useCallback(async (displayName: string) => {
     if (joinedRef.current) return roomRef.current;
     joinedRef.current = true;
 
     try {
       setError(null);
 
-      const lookup = await fetch(`/api/rooms/${roomCode}`);
-      if (!lookup.ok) throw new Error('Room not found');
-      const { roomId } = await lookup.json();
+      // Ask server to find or create a table
+      const res = await fetch('/api/roulette/join', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ displayName }),
+      });
+      if (!res.ok) throw new Error('Failed to join table');
+      const { roomId } = await res.json();
 
       const room = await colyseusClient.joinById(roomId, { displayName });
       roomRef.current = room;
@@ -99,22 +104,6 @@ export function useRouletteRoom() {
       return room;
     } catch (e: any) {
       joinedRef.current = false;
-      setError(e.message);
-      return null;
-    }
-  }, []);
-
-  const createRoom = useCallback(async (displayName: string) => {
-    try {
-      setError(null);
-      const res = await fetch('/api/rooms', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ displayName, game: 'roulette' }),
-      });
-      if (!res.ok) throw new Error('Failed to create room');
-      return await res.json();
-    } catch (e: any) {
       setError(e.message);
       return null;
     }
@@ -145,8 +134,7 @@ export function useRouletteRoom() {
     gameState,
     connected,
     error,
-    createRoom,
-    joinRoom,
+    autoJoin,
     send,
     leave,
     detachRoom,
