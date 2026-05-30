@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { CHIP_COLORS } from '@roulette/game-core';
 import type { PlayerData } from '../types';
 import HotColdPanel from './HotColdPanel';
@@ -12,16 +13,19 @@ interface PlayerSidebarProps {
   chatMessages: any[];
   onSendChat: (text: string) => void;
   onSwapColor: (index: number) => void;
+  onChangeName: (name: string) => void;
   takenColors: Set<number>;
   isMobile?: boolean;
 }
 
 export default function PlayerSidebar({
   players, sessionId, hostPlayerId, phase, lastResults, chatMessages,
-  onSendChat, onSwapColor, takenColors, isMobile = false,
+  onSendChat, onSwapColor, onChangeName, takenColors, isMobile = false,
 }: PlayerSidebarProps) {
   const playerList = Array.from(players.values()).sort((a, b) => a.seatIndex - b.seatIndex);
   const myPlayer = sessionId ? players.get(sessionId) : null;
+  const [editingName, setEditingName] = useState(false);
+  const [nameInput, setNameInput] = useState('');
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', height: '100%' }}>
@@ -55,18 +59,63 @@ export default function PlayerSidebar({
                   backgroundColor: color?.hex ?? '#888',
                   flexShrink: 0,
                 }} />
-                <span style={{
-                  fontSize: '0.8125rem',
-                  color: 'var(--text-primary)',
-                  flex: 1,
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap',
-                  fontWeight: isMe ? 600 : 400,
-                }}>
-                  {p.displayName}
-                  {p.isHost && <span style={{ color: 'var(--accent-warm)', marginLeft: '0.25rem', fontSize: '0.6875rem' }}>H</span>}
-                </span>
+                {isMe ? (
+                  editingName ? (
+                    <input
+                      autoFocus
+                      value={nameInput}
+                      onChange={e => setNameInput(e.target.value)}
+                      onBlur={() => {
+                        const trimmed = nameInput.trim().slice(0, 20);
+                        if (trimmed && trimmed !== myPlayer?.displayName) {
+                          onChangeName(trimmed);
+                          try { localStorage.setItem('roulette_displayName', trimmed); } catch {}
+                        }
+                        setEditingName(false);
+                      }}
+                      onKeyDown={e => {
+                        if (e.key === 'Enter') { (e.target as HTMLInputElement).blur(); }
+                        if (e.key === 'Escape') { setEditingName(false); }
+                      }}
+                      style={{
+                        fontSize: '0.8125rem',
+                        fontWeight: 600,
+                        color: 'var(--text-primary)',
+                        background: 'var(--surface-panel-raised)',
+                        border: '1px solid var(--accent-warm)',
+                        borderRadius: '4px',
+                        padding: '0 0.25rem',
+                        outline: 'none',
+                        width: '100%',
+                        maxWidth: '120px',
+                      }}
+                    />
+                  ) : (
+                    <span
+                      style={{
+                        fontSize: '0.8125rem',
+                        color: 'var(--text-primary)',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        borderBottom: '1px dashed var(--text-muted)',
+                      }}
+                      onClick={() => { setNameInput(p.displayName); setEditingName(true); }}
+                      title="Click to change name"
+                    >
+                      {p.displayName} ✎
+                    </span>
+                  )
+                ) : (
+                  <span style={{
+                    fontSize: '0.8125rem',
+                    color: 'var(--text-primary)',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                  }}>
+                    {p.displayName}
+                  </span>
+                )}
                 <span style={{
                   fontSize: '0.6875rem',
                   color: 'var(--success)',
