@@ -94,27 +94,32 @@ export default function Game({ isSolo = false }: GameProps) {
       if (dragRef.current?.isDragging || isPending()) {
         const gridEl = document.querySelector('[data-grid]');
         if (gridEl) {
-          const cells = gridEl.querySelectorAll('[data-number]');
-          const cellRects = Array.from(cells).map(el => {
-            const rect = el.getBoundingClientRect();
-            return {
-              number: Number(el.getAttribute('data-number')),
-              row: Number(el.getAttribute('data-row')),
-              col: Number(el.getAttribute('data-col')),
-              x: rect.left,
-              y: rect.top,
-              width: rect.width,
-              height: rect.height,
-            };
-          });
-          const zeroEl = gridEl.querySelector('[data-number="0"]');
-          const doubleZeroEl = gridEl.querySelector('[data-number="37"]');
-          const zeroRect = zeroEl ? zeroEl.getBoundingClientRect() : undefined;
-          const doubleZeroRect = doubleZeroEl ? doubleZeroEl.getBoundingClientRect() : undefined;
-          const result = detectDropZone(e.clientX, e.clientY, cellRects, zeroRect, doubleZeroRect);
-          if (result) {
-            snapX = result.snapX;
-            snapY = result.snapY;
+          const r = gridEl.getBoundingClientRect();
+          const margin = 40;
+          const nearGrid = e.clientX >= r.left - margin && e.clientX <= r.right + margin && e.clientY >= r.top - margin && e.clientY <= r.bottom + margin;
+          if (nearGrid) {
+            const cells = gridEl.querySelectorAll('[data-number]');
+            const cellRects = Array.from(cells).map(el => {
+              const rect = el.getBoundingClientRect();
+              return {
+                number: Number(el.getAttribute('data-number')),
+                row: Number(el.getAttribute('data-row')),
+                col: Number(el.getAttribute('data-col')),
+                x: rect.left,
+                y: rect.top,
+                width: rect.width,
+                height: rect.height,
+              };
+            });
+            const zeroEl = gridEl.querySelector('[data-number="0"]');
+            const doubleZeroEl = gridEl.querySelector('[data-number="37"]');
+            const zeroRect = zeroEl ? zeroEl.getBoundingClientRect() : undefined;
+            const doubleZeroRect = doubleZeroEl ? doubleZeroEl.getBoundingClientRect() : undefined;
+            const result = detectDropZone(e.clientX, e.clientY, cellRects, zeroRect, doubleZeroRect);
+            if (result) {
+              snapX = result.snapX;
+              snapY = result.snapY;
+            }
           }
         }
       }
