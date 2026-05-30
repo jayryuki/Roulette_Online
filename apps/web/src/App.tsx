@@ -8,7 +8,7 @@ export default function App() {
       <Routes>
         <Route path="/" element={<Lobby />} />
         <Route path="/solo" element={<Game isSolo />} />
-        <Route path="/game/:roomCode" element={<Game />} />
+        <Route path="/game" element={<Game />} />
       </Routes>
     </BrowserRouter>
   );
