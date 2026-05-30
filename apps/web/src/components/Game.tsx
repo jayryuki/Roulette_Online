@@ -139,6 +139,10 @@ export default function Game({ isSolo = false }: GameProps) {
     setMuted(toggleMute());
   }, []);
 
+  const handleChangeName = useCallback((name: string) => {
+    send('change-name', { displayName: name });
+  }, [send]);
+
   // Loading/connecting state
   if (!gameState || !connected) {
     return (
@@ -553,6 +557,7 @@ export default function Game({ isSolo = false }: GameProps) {
                 chatMessages={gameState.chatMessages || []}
                 onSendChat={(text) => send('chat', { text })}
                 onSwapColor={(index) => send('swap-color', { targetIndex: index })}
+                onChangeName={handleChangeName}
                 takenColors={takenColors}
                 isMobile={isMobile}
               />
@@ -671,6 +676,7 @@ export default function Game({ isSolo = false }: GameProps) {
                   chatMessages={gameState.chatMessages || []}
                   onSendChat={(text) => send('chat', { text })}
                   onSwapColor={(index) => send('swap-color', { targetIndex: index })}
+                  onChangeName={handleChangeName}
                   takenColors={takenColors}
                   isMobile={isMobile}
                 />
