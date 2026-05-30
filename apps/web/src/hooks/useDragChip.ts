@@ -5,6 +5,10 @@ export interface DragState {
   amount: number;
   currentX: number;
   currentY: number;
+  /** Snapped X position on the grid (cell center, edge, or corner). */
+  snapX: number;
+  /** Snapped Y position on the grid (cell center, edge, or corner). */
+  snapY: number;
   chipColorIndex: number;
 }
 
@@ -30,13 +34,13 @@ export function useDragChip() {
     pendingRef.current = { amount, chipColorIndex, startX: x, startY: y };
   }, []);
 
-  const moveDrag = useCallback((x: number, y: number) => {
+  const moveDrag = useCallback((x: number, y: number, snapX?: number, snapY?: number) => {
     const pending = pendingRef.current;
     if (pending) {
       const dx = x - pending.startX;
       const dy = y - pending.startY;
       if (Math.sqrt(dx * dx + dy * dy) > DRAG_THRESHOLD) {
-        const newState = { isDragging: true, amount: pending.amount, currentX: x, currentY: y, chipColorIndex: pending.chipColorIndex };
+        const newState = { isDragging: true, amount: pending.amount, currentX: x, currentY: y, snapX: snapX ?? x, snapY: snapY ?? y, chipColorIndex: pending.chipColorIndex };
         dragRef.current = newState;
         setDragState(newState);
         pendingRef.current = null;
@@ -44,7 +48,7 @@ export function useDragChip() {
       return;
     }
     if (dragRef.current?.isDragging) {
-      const newState = { ...dragRef.current, currentX: x, currentY: y };
+      const newState = { ...dragRef.current, currentX: x, currentY: y, snapX: snapX ?? dragRef.current.snapX, snapY: snapY ?? dragRef.current.snapY };
       dragRef.current = newState;
       setDragState(newState);
     }
@@ -67,5 +71,7 @@ export function useDragChip() {
     return false;
   }, []);
 
-  return { dragState, dragRef, startDrag, moveDrag, endDrag, wasDragging };
+  const isPending = useCallback(() => pendingRef.current !== null, []);
+
+  return { dragState, dragRef, startDrag, moveDrag, endDrag, wasDragging, isPending };
 }

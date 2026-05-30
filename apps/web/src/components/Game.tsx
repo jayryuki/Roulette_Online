@@ -32,11 +32,13 @@ export default function Game({ isSolo = false }: GameProps) {
   const { gameState, connected, error, autoJoin, send, leave, detachRoom, sessionId } = hook;
 
   const [selectedAmount, setSelectedAmount] = useState(25);
+  const DENOMINATIONS = [1, 5, 25, 100, 500];
   const isMobile = useIsMobile();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [muted, setMuted] = useState(getMuteState);
   const prevPhaseRef = useRef<string>('');
-  const { dragState, dragRef, startDrag, moveDrag, endDrag, wasDragging } = useDragChip();
+  const { dragState, dragRef, startDrag, moveDrag, endDrag, wasDragging, isPending } = useDragChip();
+  const repositionChipRef = useRef<number | null>(null);
 
   const roundResult = useMemo(() => {
     if (!gameState?.roundResult) return null;
@@ -81,18 +83,58 @@ export default function Game({ isSolo = false }: GameProps) {
   }, [gameState?.phase, roundResult, sessionId]);
 
   // Global pointer handlers for drag-and-drop
+  // NOTE: dragState is intentionally omitted from deps — the handlers use dragRef
+  // (a mutable ref) to read current drag state, avoiding stale closures without
+  // re-registering listeners on every drag move (which would cause infinite re-renders).
   useEffect(() => {
-    const handleMove = (e: PointerEvent) => moveDrag(e.clientX, e.clientY);
+    const handleMove = (e: PointerEvent) => {
+      // Default to cursor position so the ghost chip follows outside the grid
+      let snapX = e.clientX;
+      let snapY = e.clientY;
+      if (dragRef.current?.isDragging || isPending()) {
+        const gridEl = document.querySelector('[data-grid]');
+        if (gridEl) {
+          const cells = gridEl.querySelectorAll('[data-number]');
+          const cellRects = Array.from(cells).map(el => {
+            const rect = el.getBoundingClientRect();
+            return {
+              number: Number(el.getAttribute('data-number')),
+              row: Number(el.getAttribute('data-row')),
+              col: Number(el.getAttribute('data-col')),
+              x: rect.left,
+              y: rect.top,
+              width: rect.width,
+              height: rect.height,
+            };
+          });
+          const zeroEl = gridEl.querySelector('[data-number="0"]');
+          const doubleZeroEl = gridEl.querySelector('[data-number="37"]');
+          const zeroRect = zeroEl ? zeroEl.getBoundingClientRect() : undefined;
+          const doubleZeroRect = doubleZeroEl ? doubleZeroEl.getBoundingClientRect() : undefined;
+          const result = detectDropZone(e.clientX, e.clientY, cellRects, zeroRect, doubleZeroRect);
+          if (result) {
+            snapX = result.snapX;
+            snapY = result.snapY;
+          }
+        }
+      }
+      moveDrag(e.clientX, e.clientY, snapX, snapY);
+    };
     const handleUp = (e: PointerEvent) => {
-      // Use dragRef (not dragState) to avoid stale closure
       const current = dragRef.current;
       if (!current?.isDragging) {
         endDrag();
         return;
       }
-      // Detect drop zone from the grid
       const gridEl = document.querySelector('[data-grid]');
+      // Check if cursor is near the grid (generous margin for street/sixline bets above, and discard below)
+      let overGrid = false;
       if (gridEl) {
+        const r = gridEl.getBoundingClientRect();
+        const margin = 40;
+        overGrid = e.clientX >= r.left - margin && e.clientX <= r.right + margin && e.clientY >= r.top - margin && e.clientY <= r.bottom + margin;
+      }
+      if (overGrid && gridEl) {
         const cells = gridEl.querySelectorAll('[data-number]');
         const cellRects = Array.from(cells).map(el => {
           const rect = el.getBoundingClientRect();
@@ -113,8 +155,18 @@ export default function Game({ isSolo = false }: GameProps) {
         const result = detectDropZone(e.clientX, e.clientY, cellRects, zeroRect, doubleZeroRect);
         if (result) {
           playChipPlace();
+          if (repositionChipRef.current !== null) {
+            send('remove-bet', { chipIndex: repositionChipRef.current });
+            repositionChipRef.current = null;
+          }
           send('place-bet', { betType: result.betType, amount: current.amount });
+        } else {
+          repositionChipRef.current = null;
         }
+      } else if (repositionChipRef.current !== null) {
+        // Dropped outside grid while repositioning — discard the chip
+        send('remove-bet', { chipIndex: repositionChipRef.current });
+        repositionChipRef.current = null;
       }
       endDrag();
     };
@@ -124,7 +176,8 @@ export default function Game({ isSolo = false }: GameProps) {
       window.removeEventListener('pointermove', handleMove);
       window.removeEventListener('pointerup', handleUp);
     };
-  }, [dragState, moveDrag, endDrag, send]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [moveDrag, endDrag, send]);
 
 
 
@@ -438,6 +491,15 @@ export default function Game({ isSolo = false }: GameProps) {
               dragState={dragState}
               onDrop={() => {}}
               onDragCancel={() => {}}
+              onGridPointerDown={(x, y) => {
+                const colorIndex = DENOMINATIONS.indexOf(selectedAmount);
+                startDrag(selectedAmount, colorIndex >= 0 ? colorIndex : 2, x, y);
+              }}
+              wasDragging={wasDragging}
+              onChipPointerDown={(chipIndex, amount, chipColor, x, y) => {
+                repositionChipRef.current = chipIndex;
+                startDrag(amount, chipColor, x, y);
+              }}
             />
           </div>
 
@@ -684,12 +746,12 @@ export default function Game({ isSolo = false }: GameProps) {
         </>
       )}
 
-      {/* Ghost chip during drag */}
+      {/* Ghost chip during drag - snaps to grid positions */}
       {dragState?.isDragging && (
         <div style={{
           position: 'fixed',
-          left: dragState.currentX - 18,
-          top: dragState.currentY - 18,
+          left: dragState.snapX - 18,
+          top: dragState.snapY - 18,
           width: '36px',
           height: '36px',
           borderRadius: '50%',
@@ -705,6 +767,7 @@ export default function Game({ isSolo = false }: GameProps) {
           zIndex: 9999,
           boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
           opacity: 0.9,
+          transition: 'left 80ms ease-out, top 80ms ease-out',
         }}>
           ${dragState.amount}
         </div>

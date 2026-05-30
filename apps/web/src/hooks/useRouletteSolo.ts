@@ -287,15 +287,19 @@ export function useRouletteSolo() {
     setGameState(null);
   }, []);
 
+  const autoJoin = useCallback((displayName: string) => joinRoom('SOLO', displayName), [joinRoom]);
+
+  const detachRoom = useCallback(() => {}, []);
+
   return {
     gameState,
     connected,
     error,
     createRoom,
-    autoJoin: (displayName: string) => joinRoom('SOLO', displayName),
+    autoJoin,
     send,
     leave,
-    detachRoom: () => {},
+    detachRoom,
     sessionId: SOLO_SESSION_ID,
   };
 }
