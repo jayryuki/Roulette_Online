@@ -128,6 +128,7 @@ export default function Game({ isSolo = false }: GameProps) {
     const handleUp = (e: PointerEvent) => {
       const current = dragRef.current;
       if (!current?.isDragging) {
+        repositionChipRef.current = null;
         endDrag();
         return;
       }

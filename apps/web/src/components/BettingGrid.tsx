@@ -353,16 +353,30 @@ export default function BettingGrid({
         </div>
 
         {/* ---- Chip overlay ---- */}
-        {containerRect && (
+        {containerRect && (() => {
+          // Aggregate chips by betType per player so each position shows the total bet
+          const aggregated = new Map<string, { total: number; chipColor: number; playerId: string; firstIndex: number }>();
+          chips.forEach((chip, i) => {
+            const key = `${chip.playerId}:${chip.betType}`;
+            const existing = aggregated.get(key);
+            if (existing) {
+              existing.total += chip.amount;
+            } else {
+              aggregated.set(key, { total: chip.amount, chipColor: chip.chipColor, playerId: chip.playerId, firstIndex: i });
+            }
+          });
+          return (
           <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 10 }}>
-            {chips.map((chip, i) => {
-              const pos = chipPos(chip.betType);
+            {Array.from(aggregated.entries()).map(([key, { total, chipColor, playerId, firstIndex }]) => {
+              const betType = key.split(':').slice(1).join(':');
+              const pos = chipPos(betType);
               if (!pos) return null;
-              const color = CHIP_COLORS.find(c => c.index === chip.chipColor);
-              const parsed = parseBet(chip.betType);
+              const color = CHIP_COLORS.find(c => c.index === chipColor);
+              const parsed = parseBet(betType);
               return (
-                <div key={`${chip.playerId}-${chip.betType}-${i}`}
-                  onPointerDown={(e) => handleChipPress(e, chip, i)}
+                <div key={key}
+                  onPointerDown={(e) => handleChipPress(e, chips[firstIndex], firstIndex)}
+                  onClick={() => { if (!wasDragging?.()) onPlaceBet(betType, selectedAmount); }}
                   style={{
                     position: 'absolute', left: pos.x - chipR, top: pos.y - chipR,
                     width: chipD, height: chipD, borderRadius: '50%',
@@ -371,16 +385,17 @@ export default function BettingGrid({
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     fontSize: isMobile ? '9px' : '8px', fontWeight: 700, color: '#fff',
                     pointerEvents: canBet ? 'auto' : 'none',
-                    cursor: canBet ? 'grab' : 'default',
+                    cursor: canBet ? 'pointer' : 'default',
                     boxShadow: '0 2px 4px rgba(0,0,0,0.35)', zIndex: 11,
                     transition: 'left 60ms ease-out, top 60ms ease-out',
                   }}
-                  title={`${players.get(chip.playerId)?.displayName}: $${chip.amount} (${chip.betType})`}
-                >{chip.amount}</div>
+                  title={`${players.get(playerId)?.displayName}: $${total} (${betType})`}
+                >{total}</div>
               );
             })}
           </div>
-        )}
+          );
+        })()}
       </div>
     </div>
   );
