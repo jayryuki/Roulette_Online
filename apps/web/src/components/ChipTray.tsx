@@ -72,27 +72,25 @@ export default function ChipTray({ selectedAmount, onSelectAmount, onClearBets, 
           );
         })}
       </div>
-      {hasLastBets && (
-        <button
-          onClick={onRepeatBet}
-          disabled={!canBet}
-          style={{
-            padding: isMobile ? '0.5rem 0.75rem' : '0.375rem 0.75rem',
-            background: 'var(--accent-warm)',
-            color: '#ffffff',
-            border: 'none',
-            borderRadius: '6px',
-            fontSize: isMobile ? '0.8125rem' : '0.75rem',
-            fontWeight: 600,
-            cursor: canBet ? 'pointer' : 'not-allowed',
-            opacity: canBet ? 1 : 0.5,
-            fontFamily: "'Inter', sans-serif",
-            minHeight: isMobile ? '44px' : undefined,
-          }}
-        >
-          Repeat
-        </button>
-      )}
+      <button
+        onClick={onRepeatBet}
+        disabled={!canBet || !hasLastBets}
+        style={{
+          padding: isMobile ? '0.5rem 0.75rem' : '0.375rem 0.75rem',
+          background: 'var(--accent-warm)',
+          color: '#ffffff',
+          border: 'none',
+          borderRadius: '6px',
+          fontSize: isMobile ? '0.8125rem' : '0.75rem',
+          fontWeight: 600,
+          cursor: canBet && hasLastBets ? 'pointer' : 'not-allowed',
+          opacity: canBet && hasLastBets ? 1 : 0.4,
+          fontFamily: "'Inter', sans-serif",
+          minHeight: isMobile ? '44px' : undefined,
+        }}
+      >
+        Repeat
+      </button>
       <button
         onClick={onClearBets}
         disabled={!canBet}
