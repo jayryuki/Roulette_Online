@@ -97,10 +97,6 @@ export function useRouletteSolo() {
 
   const startNextRound = useCallback(() => {
     const s = stateRef.current;
-    // Snapshot last bets before clearing
-    if (s.chips.length > 0) {
-      s.lastBets = s.chips.map(c => ({ betType: c.betType, amount: c.amount }));
-    }
     s.phase = 'BETTING';
     s.chips = [];
     s.winningNumber = -1;
@@ -230,6 +226,9 @@ export function useRouletteSolo() {
       case 'spin-now': {
         if (s.phase !== 'BETTING') return;
         if (s.chips.length === 0) return;
+
+        // Snapshot last bets now so Repeat is ready for the next round
+        s.lastBets = s.chips.map(c => ({ betType: c.betType, amount: c.amount }));
 
         s.phase = 'SPINNING';
 

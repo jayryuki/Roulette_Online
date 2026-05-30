@@ -209,7 +209,7 @@ export default function Game({ isSolo = false }: GameProps) {
   const myPlayer = sessionId ? players.get(sessionId) : null;
   const phase = gameState.phase;
   const canBet = phase === 'BETTING' && myPlayer != null;
-  const hasLastBets = myPlayer ? (() => { try { return JSON.parse(myPlayer.lastBets).length > 0; } catch { return false; } })() : false;
+  const hasLastBets = (myPlayer?.lastBets?.length ?? 0) > 0;
 
   const takenColors = new Set<number>();
   for (const [, p] of players) {
