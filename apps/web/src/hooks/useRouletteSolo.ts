@@ -292,7 +292,7 @@ export function useRouletteSolo() {
     connected,
     error,
     createRoom,
-    autoJoin: joinRoom,
+    autoJoin: (displayName: string) => joinRoom('SOLO', displayName),
     send,
     leave,
     detachRoom: () => {},
