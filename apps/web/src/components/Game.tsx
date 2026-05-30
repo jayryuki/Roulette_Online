@@ -47,11 +47,9 @@ export default function Game({ isSolo = false }: GameProps) {
   useEffect(() => {
     if (!isSolo) {
       detachRoom(); // prevent unmount from leaving the room
-      autoJoin(displayName).then(room => {
-        if (!room) navigate('/');
-      });
+      autoJoin(displayName);
     }
-  }, [isSolo, autoJoin, displayName, navigate, detachRoom]);
+  }, [isSolo, autoJoin, displayName, detachRoom]);
 
   // Solo: initialize on mount
   useEffect(() => {
@@ -132,8 +130,8 @@ export default function Game({ isSolo = false }: GameProps) {
 
   const handleLeave = useCallback(() => {
     leave();
-    navigate('/');
-  }, [leave, navigate]);
+    window.location.reload();
+  }, [leave]);
 
   const handleToggleMute = useCallback(() => {
     setMuted(toggleMute());
