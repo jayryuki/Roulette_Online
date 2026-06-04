@@ -69,32 +69,77 @@ export function detectDropZone(
   if (zeroRect && doubleZeroRect) {
     const zeroBottom = zeroRect.y + zeroRect.height;
     const doubleZeroTop = doubleZeroRect.y;
-    const leftEdge = Math.min(zeroRect.x, doubleZeroRect.x);
-    const rightEdge = Math.max(zeroRect.x + zeroRect.width, doubleZeroRect.x + doubleZeroRect.width);
     const avgHeight = (zeroRect.height + doubleZeroRect.height) / 2;
     const edgeThreshold = avgHeight * EDGE_THRESHOLD;
+    const centerX = (zeroRect.x + zeroRect.width / 2 + doubleZeroRect.x + doubleZeroRect.width / 2) / 2;
 
-    if (x >= leftEdge - GAP_TOLERANCE && x <= rightEdge + GAP_TOLERANCE &&
+    if (x >= centerX - edgeThreshold && x <= centerX + edgeThreshold &&
         y >= zeroBottom - edgeThreshold && y <= doubleZeroTop + edgeThreshold) {
-      const snapX = (zeroRect.x + zeroRect.width / 2 + doubleZeroRect.x + doubleZeroRect.width / 2) / 2;
+      const snapX = centerX;
       const snapY = (zeroBottom + doubleZeroTop) / 2;
       return { betType: 'split_0_37', label: 'Split 0-00', coveredNumbers: [0, 37], snapX, snapY };
     }
   }
 
+  // ---- Splits on the right edge of 0 / 00 with the first column ----
+  // These MUST be checked before straight bets because straight zones overlap edge zones.
+  if (zeroRect) {
+    const col0Cells = cellRects.filter(c => c.col === 0);
+    const rightEdge = zeroRect.x + zeroRect.width;
+    const edgeThreshold = zeroRect.width * EDGE_THRESHOLD;
+    if (x >= rightEdge - edgeThreshold && x <= rightEdge + edgeThreshold + GAP_TOLERANCE) {
+      // Find the nearest col-0 cell by vertical distance to its center
+      let bestCell: CellRect | null = null;
+      let bestDist = Infinity;
+      for (const c of col0Cells) {
+        const cy = c.y + c.height / 2;
+        const dist = Math.abs(y - cy);
+        if (dist < bestDist) { bestDist = dist; bestCell = c; }
+      }
+      if (bestCell && y >= zeroRect.y - GAP_TOLERANCE && y <= zeroRect.y + zeroRect.height + GAP_TOLERANCE) {
+        const a = 0, b = bestCell.number;
+        const sorted = [a, b].sort((p, q) => p - q);
+        const snapX = (rightEdge + bestCell.x) / 2;
+        const snapY = zeroRect.y + zeroRect.height / 2;
+        return { betType: `split_${sorted.join('_')}`, label: `Split 0-${b === 37 ? '00' : String(b)}`, coveredNumbers: sorted, snapX, snapY };
+      }
+    }
+  }
+
   // ---- Five-number bet (0, 00, 1, 2, 3) ----
-  // This sits in the area between 0/00 and the first column of numbers.
+  // Only at the corner between 0/00 and the first column (near cell 1).
+  // This must be checked BEFORE the 00→col0 split because the corner is
+  // inside the right-edge zone of 00.
   if (zeroRect && doubleZeroRect) {
-    const fiveLeft = zeroRect.x;
-    const fiveRight = cellRects.filter(c => c.col === 0).reduce((min, c) => Math.min(min, c.x), Infinity);
-    const fiveTop = Math.min(zeroRect.y, doubleZeroRect.y);
-    const fiveBottom = Math.max(zeroRect.y + zeroRect.height, doubleZeroRect.y + doubleZeroRect.height);
-    if (fiveRight > fiveLeft &&
-        x >= fiveLeft - GAP_TOLERANCE && x <= fiveRight + GAP_TOLERANCE &&
-        y >= fiveTop - GAP_TOLERANCE && y <= fiveBottom + GAP_TOLERANCE) {
-      const snapX = (fiveLeft + fiveRight) / 2;
-      const snapY = (fiveTop + fiveBottom) / 2;
-      return { betType: 'five', label: 'Top Line (0-00-1-2-3)', coveredNumbers: [0, 37, 1, 2, 3], snapX, snapY };
+    const cell1 = cellRects.find(c => c.number === 1);
+    if (cell1) {
+      const cornerX = (zeroRect.x + zeroRect.width + cell1.x) / 2;
+      const cornerY = (doubleZeroRect.y + doubleZeroRect.height + cell1.y) / 2;
+      const threshold = cell1.width * EDGE_THRESHOLD;
+      if (Math.abs(x - cornerX) <= threshold && Math.abs(y - cornerY) <= threshold) {
+        return { betType: 'five', label: 'Top Line (0-00-1-2-3)', coveredNumbers: [0, 37, 1, 2, 3], snapX: cornerX, snapY: cornerY };
+      }
+    }
+  }
+  if (doubleZeroRect) {
+    const col0Cells = cellRects.filter(c => c.col === 0);
+    const rightEdge = doubleZeroRect.x + doubleZeroRect.width;
+    const edgeThreshold = doubleZeroRect.width * EDGE_THRESHOLD;
+    if (x >= rightEdge - edgeThreshold && x <= rightEdge + edgeThreshold + GAP_TOLERANCE) {
+      let bestCell: CellRect | null = null;
+      let bestDist = Infinity;
+      for (const c of col0Cells) {
+        const cy = c.y + c.height / 2;
+        const dist = Math.abs(y - cy);
+        if (dist < bestDist) { bestDist = dist; bestCell = c; }
+      }
+      if (bestCell && y >= doubleZeroRect.y - GAP_TOLERANCE && y <= doubleZeroRect.y + doubleZeroRect.height + GAP_TOLERANCE) {
+        const a = 37, b = bestCell.number;
+        const sorted = [a, b].sort((p, q) => p - q);
+        const snapX = (rightEdge + bestCell.x) / 2;
+        const snapY = doubleZeroRect.y + doubleZeroRect.height / 2;
+        return { betType: `split_${sorted.join('_')}`, label: `Split 00-${b === 37 ? '00' : String(b)}`, coveredNumbers: sorted, snapX, snapY };
+      }
     }
   }
 

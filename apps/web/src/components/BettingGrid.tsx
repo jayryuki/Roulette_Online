@@ -82,12 +82,25 @@ function chipSnapScreen(betType: string, cells: Map<string, MeasuredCell>): { sx
     case 'split': {
       const da = cells.get(String(args[0])), db = cells.get(String(args[1]));
       if (!da || !db) return null;
-      // Special case: 0-00 split — cells are stacked vertically, not horizontally
+      // 0-00 split — cells are stacked vertically
       if ((args[0] === 0 && args[1] === 37) || (args[0] === 37 && args[1] === 0)) {
         const topCell = cells.get('0');
         const botCell = cells.get('37');
         if (!topCell || !botCell) return null;
         return { sx: topCell.rect.left + topCell.rect.width / 2, sy: (topCell.rect.bottom + botCell.rect.top) / 2 };
+      }
+      // Splits involving 0 or 00 with the first column — horizontal splits
+      const hasZero = args.includes(0);
+      const hasDz = args.includes(37);
+      const otherNum = hasZero ? args.find((n: number) => n !== 0) : (hasDz ? args.find((n: number) => n !== 37) : null);
+      const otherCell = otherNum != null ? cells.get(String(otherNum)) : null;
+      if (hasZero && otherCell) {
+        const zc = cells.get('0');
+        if (zc) return { sx: (zc.rect.right + otherCell.rect.left) / 2, sy: zc.rect.top + zc.rect.height / 2 };
+      }
+      if (hasDz && otherCell) {
+        const dzc = cells.get('37');
+        if (dzc) return { sx: (dzc.rect.right + otherCell.rect.left) / 2, sy: dzc.rect.top + dzc.rect.height / 2 };
       }
       if (da.row === db.row) return { sx: (da.rect.right + db.rect.left) / 2, sy: da.rect.top + da.rect.height / 2 };
       return { sx: da.rect.left + da.rect.width / 2, sy: (da.rect.bottom + db.rect.top) / 2 };
