@@ -13,16 +13,18 @@ export default function BankrollDisplay({ bankroll, availableBankroll, roundHist
       display: 'flex',
       flexDirection: 'column',
       alignItems: 'center',
-      gap: '0.25rem',
-      padding: isMobile ? '0.5rem 0.75rem' : '0.5rem 1rem',
+      gap: '0.375rem',
+      padding: isMobile ? '0.375rem 0.75rem' : '0.5rem 1rem',
     }}>
       {/* Main bankroll */}
       <div style={{
         fontFamily: "'Inter', sans-serif",
         fontWeight: 700,
-        fontSize: isMobile ? '1.5rem' : '2rem',
+        fontSize: isMobile ? '1.375rem' : '1.75rem',
         color: bankroll > 0 ? 'var(--success)' : 'var(--danger)',
         lineHeight: 1,
+        textShadow: '0 1px 3px rgba(0,0,0,0.3)',
+        letterSpacing: '-0.02em',
       }}>
         ${bankroll.toLocaleString()}
       </div>
@@ -33,6 +35,7 @@ export default function BankrollDisplay({ bankroll, availableBankroll, roundHist
           fontSize: '0.6875rem',
           color: 'var(--text-muted)',
           fontFamily: "'Inter', sans-serif",
+          fontWeight: 500,
         }}>
           ${availableBankroll.toLocaleString()} available
         </div>
@@ -52,12 +55,13 @@ export default function BankrollDisplay({ bankroll, availableBankroll, roundHist
               fontSize: '0.6875rem',
               fontFamily: "'Inter', sans-serif",
               fontWeight: 600,
-              padding: '0.125rem 0.375rem',
+              padding: '0.125rem 0.4375rem',
               borderRadius: '4px',
               background: profit >= 0 ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.15)',
               color: profit >= 0 ? 'var(--success)' : 'var(--danger)',
               whiteSpace: 'nowrap',
               flexShrink: 0,
+              border: `1px solid ${profit >= 0 ? 'rgba(34,197,94,0.2)' : 'rgba(239,68,68,0.2)'}`,
             }}>
               {profit >= 0 ? `+$${profit}` : `-$${Math.abs(profit)}`}
             </span>

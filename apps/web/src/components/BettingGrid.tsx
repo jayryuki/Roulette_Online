@@ -28,34 +28,21 @@ interface BettingGridProps {
   onDragCancel?: () => void;
   onGridPointerDown?: (x: number, y: number) => void;
   wasDragging?: () => boolean;
-  /** Press on a placed chip to reposition it. */
   onChipPointerDown?: (chipIndex: number, amount: number, chipColor: number, x: number, y: number) => void;
 }
 
-/** Return the numbers covered by a bet type. */
 function coveredNumbers(betType: string): number[] {
   const parsed = parseBet(betType);
   if (!parsed) return [];
   const { category, args } = parsed;
   switch (category) {
-    case 'straight':
-      return [args[0]];
-    case 'split':
-      return args;
-    case 'street': {
-      const s = args[0];
-      return [s, s + 1, s + 2];
-    }
-    case 'corner':
-      return args;
-    case 'five':
-      return [0, 37, 1, 2, 3];
-    case 'sixline': {
-      const s = args[0];
-      return [s, s + 1, s + 2, s + 3, s + 4, s + 5];
-    }
-    default:
-      return [];
+    case 'straight': return [args[0]];
+    case 'split': return args;
+    case 'street': { const s = args[0]; return [s, s + 1, s + 2]; }
+    case 'corner': return args;
+    case 'five': return [0, 37, 1, 2, 3];
+    case 'sixline': { const s = args[0]; return [s, s + 1, s + 2, s + 3, s + 4, s + 5]; }
+    default: return [];
   }
 }
 
@@ -83,7 +70,6 @@ function chipBorderColor(category: string | undefined): string {
 
 interface MeasuredCell { rect: DOMRect; row: number; col: number; }
 
-/** Screen-space snap point for a chip of the given bet type. */
 function chipSnapScreen(betType: string, cells: Map<string, MeasuredCell>): { sx: number; sy: number } | null {
   const parsed = parseBet(betType);
   if (!parsed) return null;
@@ -96,6 +82,12 @@ function chipSnapScreen(betType: string, cells: Map<string, MeasuredCell>): { sx
     case 'split': {
       const da = cells.get(String(args[0])), db = cells.get(String(args[1]));
       if (!da || !db) return null;
+      if ((args[0] === 0 && args[1] === 37) || (args[0] === 37 && args[1] === 0)) {
+        const topCell = cells.get('0');
+        const botCell = cells.get('37');
+        if (!topCell || !botCell) return null;
+        return { sx: topCell.rect.left + topCell.rect.width / 2, sy: (topCell.rect.bottom + botCell.rect.top) / 2 };
+      }
       if (da.row === db.row) return { sx: (da.rect.right + db.rect.left) / 2, sy: da.rect.top + da.rect.height / 2 };
       return { sx: da.rect.left + da.rect.width / 2, sy: (da.rect.bottom + db.rect.top) / 2 };
     }
@@ -105,13 +97,11 @@ function chipSnapScreen(betType: string, cells: Map<string, MeasuredCell>): { sx
       return { sx: ds.reduce((s, d) => s + d.rect.left + d.rect.width / 2, 0) / 4, sy: ds.reduce((s, d) => s + d.rect.top + d.rect.height / 2, 0) / 4 };
     }
     case 'street': {
-      // Chip at the top of the grid, inside the top-row cell
       const topNum = Math.floor((args[0] - 1) / 3) * 3 + 3;
       const d = cells.get(String(topNum)); if (!d) return null;
       return { sx: d.rect.left + d.rect.width / 2, sy: d.rect.top + d.rect.height * 0.25 };
     }
     case 'sixline': {
-      // Chip at the top of the grid, between two columns, inside the cells
       const startCol = Math.floor((args[0] - 1) / 3);
       const d1 = cells.get(String(startCol * 3 + 3));
       const d2 = cells.get(String((startCol + 1) * 3 + 3));
@@ -130,20 +120,6 @@ function chipSnapScreen(betType: string, cells: Map<string, MeasuredCell>): { sx
   }
 }
 
-const cellStyle: React.CSSProperties = {
-  position: 'relative',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  color: '#ffffff',
-  fontWeight: 700,
-  cursor: 'pointer',
-  borderRadius: '3px',
-  transition: 'filter 80ms',
-  border: '1px solid rgba(255,255,255,0.15)',
-  userSelect: 'none',
-};
-
 export default function BettingGrid({
   chips, players, phase, sessionId, selectedAmount, onPlaceBet, onRemoveBet, isMobile = false,
   dragState, onDrop, onDragCancel, onGridPointerDown, wasDragging, onChipPointerDown,
@@ -153,7 +129,6 @@ export default function BettingGrid({
   const [highlightedNumbers, setHighlightedNumbers] = useState<Set<number>>(new Set());
   const [dropPreview, setDropPreview] = useState<DropResult | null>(null);
 
-  /* ---- Cell measurement ---- */
   const [cellMap, setCellMap] = useState<Map<string, MeasuredCell>>(new Map());
   const [containerRect, setContainerRect] = useState<DOMRect | null>(null);
 
@@ -181,7 +156,6 @@ export default function BettingGrid({
     return () => { obs.disconnect(); window.removeEventListener('resize', measure); };
   }, []);
 
-  /* ---- Chip position (container-relative) ---- */
   const chipPos = useCallback((betType: string): { x: number; y: number } | null => {
     if (!containerRect) return null;
     const s = chipSnapScreen(betType, cellMap);
@@ -189,7 +163,6 @@ export default function BettingGrid({
     return { x: s.sx - containerRect.left, y: s.sy - containerRect.top };
   }, [cellMap, containerRect]);
 
-  /* ---- Drop-zone detection (screen coords, for drag) ---- */
   const computeCellRects = useCallback((): CellRect[] => {
     if (!gridRef.current) return [];
     return Array.from(gridRef.current.querySelectorAll('[data-number]')).map(el => {
@@ -244,30 +217,23 @@ export default function BettingGrid({
     onChipPointerDown?.(idx, chip.amount, chip.chipColor, e.clientX, e.clientY);
   }, [canBet, onChipPointerDown]);
 
-  /* ---- Layout constants ---- */
   const topRow = Array.from({ length: 12 }, (_, i) => i * 3 + 3);
   const midRow = Array.from({ length: 12 }, (_, i) => i * 3 + 2);
   const botRow = Array.from({ length: 12 }, (_, i) => i * 3 + 1);
 
-  const numSize: React.CSSProperties = isMobile
-    ? { width: '56px', height: '44px', fontSize: '13px', minHeight: '44px' }
-    : { width: '52px', height: '38px', fontSize: '11px' };
-
-  const zeroW = isMobile ? '56px' : '52px';
-  const gap = '3px';
   const isHighlighted = (num: number) => highlightedNumbers.has(num);
-  const chipR = isMobile ? 13 : 11;
+  const chipR = isMobile ? 12 : 11;
   const chipD = chipR * 2;
 
   return (
-    <div style={{ position: 'relative' }}>
+    <div style={{ position: 'relative', width: '100%', maxWidth: isMobile ? '100%' : 540, margin: '0 auto' }}>
       <div
         ref={gridRef}
         data-grid
         onPointerDown={(e) => { if (canBet && selectedAmount > 0 && onGridPointerDown) onGridPointerDown(e.clientX, e.clientY); }}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
-        style={{ display: 'flex', flexDirection: 'column', gap, userSelect: 'none', position: 'relative', zIndex: 0 }}
+        className="roulette-grid"
       >
         {/* Drop preview label */}
         {dragState?.isDragging && dropPreview && (
@@ -277,84 +243,101 @@ export default function BettingGrid({
             padding: '3px 10px', borderRadius: '4px', fontSize: '11px', fontWeight: 600,
             whiteSpace: 'nowrap', zIndex: 10000, pointerEvents: 'none',
           }}>
-            {dropPreview.label} ({dropPreview.coveredNumbers.join(', ')})
+            {dropPreview.label} ({dropPreview.coveredNumbers.map(n => n === 37 ? '00' : String(n)).join(', ')})
           </div>
         )}
 
         {/* Main row: 0/00 | 3x12 grid | column bets */}
-        <div style={{ display: 'flex', gap }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap }}>
+        <div className="rg-main-row">
+          {/* Zero / Double Zero column */}
+          <div className="rg-zero-col">
             {[{ n: 0, label: '0' }, { n: 37, label: '00' }].map(({ n, label }) => (
-              <div key={n} data-number={String(n)} onClick={() => handleNumberClick(n)}
-                onMouseEnter={(e) => { if (!dragState?.isDragging) e.currentTarget.style.filter = 'brightness(1.3)'; }}
-                onMouseLeave={(e) => { e.currentTarget.style.filter = ''; }}
-                style={{ ...cellStyle, ...numSize, flex: 1, backgroundColor: numColor(n), width: zeroW,
-                  ...(isHighlighted(n) ? { outline: '2px solid var(--accent-warm)', outlineOffset: '-1px', filter: 'brightness(1.4)' } : {}) }}
-              >{label}</div>
+              <button
+                key={n}
+                data-number={String(n)}
+                onClick={() => handleNumberClick(n)}
+                className={`rg-cell rg-num-cell ${isHighlighted(n) ? 'rg-highlight' : ''}`}
+                style={{ backgroundColor: numColor(n) }}
+              >
+                {label}
+              </button>
             ))}
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap, overflowX: isMobile ? 'auto' : undefined, WebkitOverflowScrolling: isMobile ? 'touch' : undefined }}>
+          {/* Number grid */}
+          <div className="rg-number-grid">
             {[topRow, midRow, botRow].map((row, ri) => (
-              <div key={ri} style={{ display: 'flex', gap }}>
+              <div key={ri} className="rg-number-row">
                 {row.map((num, ci) => (
-                  <div key={num} data-number={String(num)} data-row={String(ri)} data-col={String(ci)}
+                  <button
+                    key={num}
+                    data-number={String(num)}
+                    data-row={String(ri)}
+                    data-col={String(ci)}
                     onClick={() => handleNumberClick(num)}
-                    onMouseEnter={(e) => { if (!dragState?.isDragging) e.currentTarget.style.filter = 'brightness(1.3)'; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.filter = ''; }}
-                    style={{ ...cellStyle, ...numSize, backgroundColor: numColor(num),
-                      ...(isHighlighted(num) ? { outline: '2px solid var(--accent-warm)', outlineOffset: '-1px', filter: 'brightness(1.4)' } : {}) }}
-                  >{displayNum(num)}</div>
+                    className={`rg-cell rg-num-cell ${isHighlighted(num) ? 'rg-highlight' : ''}`}
+                    style={{ backgroundColor: numColor(num) }}
+                  >
+                    {displayNum(num)}
+                  </button>
                 ))}
               </div>
             ))}
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap }}>
+          {/* Column bets */}
+          <div className="rg-col-bets">
             {['column_3', 'column_2', 'column_1'].map(bt => (
-              <div key={bt} data-bet-type={bt} onClick={() => handleOutsideBet(bt)}
-                onMouseEnter={(e) => { if (!dragState?.isDragging) e.currentTarget.style.filter = 'brightness(1.2)'; }}
-                onMouseLeave={(e) => { e.currentTarget.style.filter = ''; }}
-                style={{ ...cellStyle, ...numSize, backgroundColor: 'var(--surface-panel-raised)', color: 'var(--text-primary)' }}
-              >2:1</div>
+              <button
+                key={bt}
+                data-bet-type={bt}
+                onClick={() => handleOutsideBet(bt)}
+                className="rg-cell rg-outside-cell"
+              >
+                2:1
+              </button>
             ))}
           </div>
         </div>
 
         {/* Dozen bets */}
-        <div style={{ display: 'flex', gap, marginLeft: `calc(${zeroW} + ${gap})` }}>
+        <div className="rg-dozen-row">
           {[{ l: '1st 12', bt: 'dozen_1' }, { l: '2nd 12', bt: 'dozen_2' }, { l: '3rd 12', bt: 'dozen_3' }].map(({ l, bt }) => (
-            <div key={bt} data-bet-type={bt} onClick={() => handleOutsideBet(bt)}
-              onMouseEnter={(e) => { if (!dragState?.isDragging) e.currentTarget.style.filter = 'brightness(1.2)'; }}
-              onMouseLeave={(e) => { e.currentTarget.style.filter = ''; }}
-              style={{ ...cellStyle, flex: 1, minWidth: '56px', backgroundColor: 'var(--surface-panel-raised)', color: 'var(--text-primary)',
-                fontSize: isMobile ? '11px' : '10px', height: isMobile ? '36px' : '26px', fontWeight: 600 }}
-            >{l}</div>
+            <button
+              key={bt}
+              data-bet-type={bt}
+              onClick={() => handleOutsideBet(bt)}
+              className="rg-cell rg-outside-cell rg-dozen-cell"
+            >
+              {l}
+            </button>
           ))}
         </div>
 
         {/* Even-money bets */}
-        <div style={{ display: 'flex', gap, marginLeft: `calc(${zeroW} + ${gap})` }}>
+        <div className="rg-even-row">
           {[
-            { l: '1-18', bt: 'low', bg: 'var(--surface-panel-raised)', fg: 'var(--text-primary)' },
-            { l: 'EVEN', bt: 'even', bg: 'var(--surface-panel-raised)', fg: 'var(--text-primary)' },
+            { l: '1-18', bt: 'low' },
+            { l: 'EVEN', bt: 'even' },
             { l: 'RED', bt: 'red', bg: 'var(--roulette-red)', fg: '#fff' },
             { l: 'BLK', bt: 'black', bg: 'var(--roulette-black)', fg: '#fff' },
-            { l: 'ODD', bt: 'odd', bg: 'var(--surface-panel-raised)', fg: 'var(--text-primary)' },
-            { l: '19-36', bt: 'high', bg: 'var(--surface-panel-raised)', fg: 'var(--text-primary)' },
+            { l: 'ODD', bt: 'odd' },
+            { l: '19-36', bt: 'high' },
           ].map(({ l, bt, bg, fg }) => (
-            <div key={bt} data-bet-type={bt} onClick={() => handleOutsideBet(bt)}
-              onMouseEnter={(e) => { if (!dragState?.isDragging) e.currentTarget.style.filter = 'brightness(1.2)'; }}
-              onMouseLeave={(e) => { e.currentTarget.style.filter = ''; }}
-              style={{ ...cellStyle, flex: 1, minWidth: '56px', backgroundColor: bg, color: fg,
-                fontSize: isMobile ? '11px' : '10px', height: isMobile ? '36px' : '26px', fontWeight: 600 }}
-            >{l}</div>
+            <button
+              key={bt}
+              data-bet-type={bt}
+              onClick={() => handleOutsideBet(bt)}
+              className="rg-cell rg-outside-cell rg-even-cell"
+              style={bg ? { backgroundColor: bg, color: fg } : undefined}
+            >
+              {l}
+            </button>
           ))}
         </div>
 
-        {/* ---- Chip overlay ---- */}
+        {/* Chip overlay */}
         {containerRect && (() => {
-          // Aggregate chips by betType per player so each position shows the total bet
           const aggregated = new Map<string, { total: number; chipColor: number; playerId: string; firstIndex: number }>();
           chips.forEach((chip, i) => {
             const key = `${chip.playerId}:${chip.betType}`;
@@ -366,34 +349,36 @@ export default function BettingGrid({
             }
           });
           return (
-          <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 10 }}>
-            {Array.from(aggregated.entries()).map(([key, { total, chipColor, playerId, firstIndex }]) => {
-              const betType = key.split(':').slice(1).join(':');
-              const pos = chipPos(betType);
-              if (!pos) return null;
-              const color = CHIP_COLORS.find(c => c.index === chipColor);
-              const parsed = parseBet(betType);
-              return (
-                <div key={key}
-                  onPointerDown={(e) => handleChipPress(e, chips[firstIndex], firstIndex)}
-                  onClick={() => { if (!wasDragging?.()) onPlaceBet(betType, selectedAmount); }}
-                  style={{
-                    position: 'absolute', left: pos.x - chipR, top: pos.y - chipR,
-                    width: chipD, height: chipD, borderRadius: '50%',
-                    border: `2px solid ${chipBorderColor(parsed?.category)}`,
-                    backgroundColor: color?.hex ?? '#888',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: isMobile ? '9px' : '8px', fontWeight: 700, color: '#fff',
-                    pointerEvents: canBet ? 'auto' : 'none',
-                    cursor: canBet ? 'pointer' : 'default',
-                    boxShadow: '0 2px 4px rgba(0,0,0,0.35)', zIndex: 11,
-                    transition: 'left 60ms ease-out, top 60ms ease-out',
-                  }}
-                  title={`${players.get(playerId)?.displayName}: $${total} (${betType})`}
-                >{total}</div>
-              );
-            })}
-          </div>
+            <div className="rg-chip-layer">
+              {Array.from(aggregated.entries()).map(([key, { total, chipColor, playerId, firstIndex }]) => {
+                const betType = key.split(':').slice(1).join(':');
+                const pos = chipPos(betType);
+                if (!pos) return null;
+                const color = CHIP_COLORS.find(c => c.index === chipColor);
+                const parsed = parseBet(betType);
+                return (
+                  <button
+                    key={key}
+                    onPointerDown={(e) => handleChipPress(e, chips[firstIndex], firstIndex)}
+                    onClick={() => { if (!wasDragging?.()) onPlaceBet(betType, selectedAmount); }}
+                    className="rg-chip"
+                    style={{
+                      left: pos.x - chipR,
+                      top: pos.y - chipR,
+                      width: chipD,
+                      height: chipD,
+                      backgroundColor: color?.hex ?? '#888',
+                      borderColor: chipBorderColor(parsed?.category),
+                      pointerEvents: canBet ? 'auto' : 'none',
+                      cursor: canBet ? 'pointer' : 'default',
+                    }}
+                    title={`${players.get(playerId)?.displayName}: $${total} (${betType})`}
+                  >
+                    {total}
+                  </button>
+                );
+              })}
+            </div>
           );
         })()}
       </div>
