@@ -65,23 +65,6 @@ export function detectDropZone(
   for (const c of cellRects) cellByPos.set(`${c.row}:${c.col}`, c);
   const getCellAt = (r: number, c: number) => cellByPos.get(`${r}:${c}`);
 
-  // ---- Five-number bet (0, 00, 1, 2, 3) ----
-  // This sits in the area between 0/00 and the first column of numbers.
-  if (zeroRect && doubleZeroRect) {
-    const fiveLeft = zeroRect.x;
-    const fiveRight = cellRects.filter(c => c.col === 0).reduce((min, c) => Math.min(min, c.x), Infinity);
-    const fiveTop = Math.min(zeroRect.y, doubleZeroRect.y);
-    const fiveBottom = Math.max(zeroRect.y + zeroRect.height, doubleZeroRect.y + doubleZeroRect.height);
-    if (fiveRight > fiveLeft &&
-        x >= fiveLeft - GAP_TOLERANCE && x <= fiveRight + GAP_TOLERANCE &&
-        y >= fiveTop - GAP_TOLERANCE && y <= fiveBottom + GAP_TOLERANCE) {
-      const snapX = (fiveLeft + fiveRight) / 2;
-      const snapY = (fiveTop + fiveBottom) / 2;
-      return { betType: 'five', label: 'Top Line (0-00-1-2-3)', coveredNumbers: [0, 37, 1, 2, 3], snapX, snapY };
-    }
-  }
-
-
   // ---- Split between 0 and 00 ----
   if (zeroRect && doubleZeroRect) {
     const zeroBottom = zeroRect.y + zeroRect.height;
@@ -98,6 +81,23 @@ export function detectDropZone(
       return { betType: 'split_0_37', label: 'Split 0-00', coveredNumbers: [0, 37], snapX, snapY };
     }
   }
+
+  // ---- Five-number bet (0, 00, 1, 2, 3) ----
+  // This sits in the area between 0/00 and the first column of numbers.
+  if (zeroRect && doubleZeroRect) {
+    const fiveLeft = zeroRect.x;
+    const fiveRight = cellRects.filter(c => c.col === 0).reduce((min, c) => Math.min(min, c.x), Infinity);
+    const fiveTop = Math.min(zeroRect.y, doubleZeroRect.y);
+    const fiveBottom = Math.max(zeroRect.y + zeroRect.height, doubleZeroRect.y + doubleZeroRect.height);
+    if (fiveRight > fiveLeft &&
+        x >= fiveLeft - GAP_TOLERANCE && x <= fiveRight + GAP_TOLERANCE &&
+        y >= fiveTop - GAP_TOLERANCE && y <= fiveBottom + GAP_TOLERANCE) {
+      const snapX = (fiveLeft + fiveRight) / 2;
+      const snapY = (fiveTop + fiveBottom) / 2;
+      return { betType: 'five', label: 'Top Line (0-00-1-2-3)', coveredNumbers: [0, 37, 1, 2, 3], snapX, snapY };
+    }
+  }
+
   // ---- 0 / 00 straight bets ----
   if (zeroRect && x >= zeroRect.x - GAP_TOLERANCE && x <= zeroRect.x + zeroRect.width + GAP_TOLERANCE && y >= zeroRect.y - GAP_TOLERANCE && y <= zeroRect.y + zeroRect.height + GAP_TOLERANCE) {
     return { betType: 'straight_0', label: '0', coveredNumbers: [0], snapX: zeroRect.x + zeroRect.width / 2, snapY: zeroRect.y + zeroRect.height / 2 };
