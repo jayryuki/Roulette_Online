@@ -240,7 +240,7 @@ export default function BettingGrid({
   const chipD = chipR * 2;
 
   return (
-    <div style={{ position: 'relative', width: '100%', maxWidth: isMobile ? '100%' : 540, margin: '0 auto' }}>
+    <div style={{ position: 'relative', width: 'fit-content', maxWidth: '100%', margin: '0 auto' }}>
       <div
         ref={gridRef}
         data-grid
