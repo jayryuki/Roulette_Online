@@ -82,6 +82,7 @@ function chipSnapScreen(betType: string, cells: Map<string, MeasuredCell>): { sx
     case 'split': {
       const da = cells.get(String(args[0])), db = cells.get(String(args[1]));
       if (!da || !db) return null;
+      // Special case: 0-00 split — cells are stacked vertically, not horizontally
       if ((args[0] === 0 && args[1] === 37) || (args[0] === 37 && args[1] === 0)) {
         const topCell = cells.get('0');
         const botCell = cells.get('37');
