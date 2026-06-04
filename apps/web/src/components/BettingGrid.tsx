@@ -26,7 +26,6 @@ interface BettingGridProps {
   dragState?: DragStateInput | null;
   onDrop?: (betType: string, amount: number) => void;
   onDragCancel?: () => void;
-  onGridPointerDown?: (x: number, y: number) => void;
   wasDragging?: () => boolean;
   onChipPointerDown?: (chipIndex: number, amount: number, chipColor: number, x: number, y: number) => void;
 }
@@ -136,7 +135,7 @@ function chipSnapScreen(betType: string, cells: Map<string, MeasuredCell>): { sx
 
 export default function BettingGrid({
   chips, players, phase, sessionId, selectedAmount, onPlaceBet, onRemoveBet, isMobile = false,
-  dragState, onDrop, onDragCancel, onGridPointerDown, wasDragging, onChipPointerDown,
+  dragState, onDrop, onDragCancel, wasDragging, onChipPointerDown,
 }: BettingGridProps) {
   const canBet = phase === 'BETTING' && sessionId != null;
   const gridRef = useRef<HTMLDivElement>(null);
@@ -244,7 +243,6 @@ export default function BettingGrid({
       <div
         ref={gridRef}
         data-grid
-        onPointerDown={(e) => { if (canBet && selectedAmount > 0 && onGridPointerDown) onGridPointerDown(e.clientX, e.clientY); }}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
         className="roulette-grid"

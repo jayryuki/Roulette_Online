@@ -768,6 +768,10 @@
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
     padding-bottom: 0.25rem;
+    /* Allow the browser to handle panning on the grid background; pointer events on
+       cells and existing chips still fire because they have their own handlers. */
+    touch-action: pan-x pan-y;
+    overscroll-behavior: contain;
   }
 
   .game-chip-tray-wrap {
@@ -787,5 +791,117 @@
 
   .game-over-modal-title {
     font-size: 1.5rem;
+  }
+}
+
+/* ── Mobile landscape (short & wide) ── */
+/* Targets phones in landscape where viewport height is the limiting factor.
+   Restructures the play area so the betting grid stays visible without scrolling. */
+@media (max-width: 1100px) and (orientation: landscape) and (max-height: 500px) {
+  .game-root {
+    height: 100dvh;
+  }
+
+  .game-main {
+    flex-direction: row;
+    gap: 0.375rem;
+    padding: 0.25rem;
+  }
+
+  .game-play-area {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-content: flex-start;
+    gap: 0.25rem 0.5rem;
+  }
+
+  /* Bankroll compactly at top, full width */
+  .game-bankroll-wrap {
+    order: 0;
+    flex: 0 0 100%;
+  }
+  .game-bankroll-wrap > div {
+    flex-direction: row;
+    gap: 0.5rem;
+    padding: 0.125rem 0.5rem !important;
+  }
+  .game-bankroll-wrap > div > div:first-child {
+    font-size: 1rem !important;
+  }
+  .game-bankroll-wrap > div > div:nth-child(2) {
+    font-size: 0.625rem !important;
+  }
+
+  /* Grid takes the main area on the left */
+  .game-grid-wrap {
+    order: 1;
+    flex: 1 1 0;
+    min-width: 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    display: block;
+    justify-content: initial;
+    align-items: initial;
+  }
+
+  /* Wheel compressed on the right */
+  .game-wheel-wrap {
+    order: 2;
+    flex: 0 0 140px;
+    max-height: 100%;
+    overflow: hidden;
+    padding-top: 0;
+  }
+
+  /* Chip tray spans full width below the grid */
+  .game-chip-tray-wrap {
+    order: 3;
+    flex: 0 0 100%;
+  }
+
+  /* Hide the win banner in cramped landscape - the result is already shown via the wheel */
+  .game-win-banner {
+    order: 4;
+    flex: 0 0 100%;
+    padding: 0.125rem 0.75rem;
+  }
+
+  /* Result summary below the chip tray if present */
+  .game-result-summary {
+    order: 5;
+    flex: 0 0 100%;
+    max-height: 50px;
+  }
+
+  /* Tighter cell sizing so the whole board fits horizontally next to the wheel */
+  :root {
+    --rg-cell-w: clamp(26px, 3.6vw, 40px);
+    --rg-cell-h: clamp(24px, 3.2vw, 36px);
+    --rg-font: clamp(8px, 1vw, 10px);
+    --rg-outside-h: clamp(20px, 2.6vw, 28px);
+    --rg-outside-font: clamp(7px, 0.85vw, 9px);
+  }
+
+  .game-topbar {
+    min-height: 40px;
+    padding: 0.25rem 0.5rem;
+  }
+
+  .game-btn-leave {
+    font-size: 0.75rem !important;
+    min-height: 32px !important;
+    padding: 0.25rem 0.5rem !important;
+  }
+
+  .game-btn-spin {
+    padding: 0.25rem 0.75rem;
+    font-size: 0.75rem;
+    min-height: 32px;
+  }
+
+  .game-icon-btn {
+    width: 32px;
+    height: 32px;
+    font-size: 0.875rem;
   }
 }

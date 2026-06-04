@@ -296,12 +296,14 @@ export default function Game({ isSolo = false }: GameProps) {
           )}
 
           {/* Bankroll display */}
-          <BankrollDisplay
-            bankroll={isSolo ? soloBankroll : (myPlayer?.bankroll ?? 0)}
-            availableBankroll={isSolo ? soloAvailableBankroll : ((myPlayer?.bankroll ?? 0) - (myPlayer?.totalBetThisRound ?? 0))}
-            roundHistory={myPlayer?.roundHistory ?? []}
-            isMobile={isMobile}
-          />
+          <div className="game-bankroll-wrap">
+            <BankrollDisplay
+              bankroll={isSolo ? soloBankroll : (myPlayer?.bankroll ?? 0)}
+              availableBankroll={isSolo ? soloAvailableBankroll : ((myPlayer?.bankroll ?? 0) - (myPlayer?.totalBetThisRound ?? 0))}
+              roundHistory={myPlayer?.roundHistory ?? []}
+              isMobile={isMobile}
+            />
+          </div>
 
           {/* Betting grid */}
           <div className="game-grid-wrap">
@@ -320,10 +322,6 @@ export default function Game({ isSolo = false }: GameProps) {
               dragState={dragState}
               onDrop={() => {}}
               onDragCancel={() => {}}
-              onGridPointerDown={(x, y) => {
-                const colorIndex = DENOMINATIONS.indexOf(selectedAmount);
-                startDrag(selectedAmount, colorIndex >= 0 ? colorIndex : 2, x, y);
-              }}
               wasDragging={wasDragging}
               onChipPointerDown={(chipIndex, amount, chipColor, x, y) => {
                 repositionChipRef.current = chipIndex;
