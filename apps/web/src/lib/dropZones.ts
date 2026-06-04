@@ -81,6 +81,23 @@ export function detectDropZone(
     }
   }
 
+
+  // ---- Split between 0 and 00 ----
+  if (zeroRect && doubleZeroRect) {
+    const zeroBottom = zeroRect.y + zeroRect.height;
+    const doubleZeroTop = doubleZeroRect.y;
+    const leftEdge = Math.min(zeroRect.x, doubleZeroRect.x);
+    const rightEdge = Math.max(zeroRect.x + zeroRect.width, doubleZeroRect.x + doubleZeroRect.width);
+    const avgHeight = (zeroRect.height + doubleZeroRect.height) / 2;
+    const edgeThreshold = avgHeight * EDGE_THRESHOLD;
+
+    if (x >= leftEdge - GAP_TOLERANCE && x <= rightEdge + GAP_TOLERANCE &&
+        y >= zeroBottom - edgeThreshold && y <= doubleZeroTop + edgeThreshold) {
+      const snapX = (zeroRect.x + zeroRect.width / 2 + doubleZeroRect.x + doubleZeroRect.width / 2) / 2;
+      const snapY = (zeroBottom + doubleZeroTop) / 2;
+      return { betType: 'split_0_37', label: 'Split 0-00', coveredNumbers: [0, 37], snapX, snapY };
+    }
+  }
   // ---- 0 / 00 straight bets ----
   if (zeroRect && x >= zeroRect.x - GAP_TOLERANCE && x <= zeroRect.x + zeroRect.width + GAP_TOLERANCE && y >= zeroRect.y - GAP_TOLERANCE && y <= zeroRect.y + zeroRect.height + GAP_TOLERANCE) {
     return { betType: 'straight_0', label: '0', coveredNumbers: [0], snapX: zeroRect.x + zeroRect.width / 2, snapY: zeroRect.y + zeroRect.height / 2 };
