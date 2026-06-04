@@ -96,6 +96,13 @@ function chipSnapScreen(betType: string, cells: Map<string, MeasuredCell>): { sx
     case 'split': {
       const da = cells.get(String(args[0])), db = cells.get(String(args[1]));
       if (!da || !db) return null;
+      // Special case: 0-00 split — cells are stacked vertically, not horizontally
+      if ((args[0] === 0 && args[1] === 37) || (args[0] === 37 && args[1] === 0)) {
+        const topCell = cells.get('0');
+        const botCell = cells.get('37');
+        if (!topCell || !botCell) return null;
+        return { sx: topCell.rect.left + topCell.rect.width / 2, sy: (topCell.rect.bottom + botCell.rect.top) / 2 };
+      }
       if (da.row === db.row) return { sx: (da.rect.right + db.rect.left) / 2, sy: da.rect.top + da.rect.height / 2 };
       return { sx: da.rect.left + da.rect.width / 2, sy: (da.rect.bottom + db.rect.top) / 2 };
     }
@@ -277,7 +284,7 @@ export default function BettingGrid({
             padding: '3px 10px', borderRadius: '4px', fontSize: '11px', fontWeight: 600,
             whiteSpace: 'nowrap', zIndex: 10000, pointerEvents: 'none',
           }}>
-            {dropPreview.label} ({dropPreview.coveredNumbers.join(', ')})
+            {dropPreview.label} ({dropPreview.coveredNumbers.map(n => n === 37 ? '00' : String(n)).join(', ')})
           </div>
         )}
 
