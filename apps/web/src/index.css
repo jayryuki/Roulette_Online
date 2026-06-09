@@ -1086,3 +1086,63 @@
 @media (prefers-reduced-motion: reduce) {
   .roulette-win-burst, .roulette-win-burst * { animation-duration: 1ms !important; }
 }
+
+/* Readability pass: stronger HUD surfaces and tactile controls */
+.game-topbar,
+.game-chip-tray-wrap,
+.game-result-summary,
+.game-sidebar > *,
+.game-drawer,
+.game-over-panel,
+.game-over-modal {
+  color: rgba(255,255,255,0.94);
+}
+
+.game-topbar {
+  background: rgba(5, 18, 13, 0.64) !important;
+  backdrop-filter: blur(14px);
+  border-bottom: 1px solid rgba(255,255,255,0.12) !important;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.22);
+}
+
+.game-bankroll-wrap > div,
+.game-result-summary,
+.game-sidebar > div,
+.game-drawer,
+.game-over-panel,
+.game-over-modal {
+  background: rgba(8, 24, 18, 0.80) !important;
+  border: 1px solid rgba(255,255,255,0.14) !important;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.22), inset 0 1px 0 rgba(255,255,255,0.08);
+  backdrop-filter: blur(12px);
+}
+
+.game-chip-tray-wrap {
+  background: rgba(6, 22, 16, 0.82) !important;
+  border-top: 1px solid rgba(255,255,255,0.13) !important;
+  box-shadow: 0 -10px 30px rgba(0,0,0,0.22);
+}
+
+.game-root [style*="var(--text-muted)"] { color: rgba(255,255,255,0.68) !important; }
+.game-root [style*="var(--text-secondary)"] { color: rgba(255,255,255,0.78) !important; }
+.game-root [style*="var(--text-primary)"] { color: rgba(255,255,255,0.94) !important; }
+
+.game-root button:not(:disabled),
+.rg-cell,
+.rg-chip {
+  transition: transform 120ms ease, filter 120ms ease, box-shadow 120ms ease;
+}
+
+.game-root button:not(:disabled):active,
+.rg-cell:active:not(:disabled) {
+  transform: translateY(1px) scale(0.98);
+  filter: brightness(1.08);
+}
+
+.rg-table-card {
+  border-color: rgba(255,255,255,0.18) !important;
+}
+
+.rg-outside-cell {
+  color: rgba(255,255,255,0.96) !important;
+}
