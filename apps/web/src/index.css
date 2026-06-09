@@ -1026,3 +1026,63 @@
     --rg-outside-font: 12px;
   }
 }
+
+/* Reward burst for positive settlement */
+.roulette-win-burst {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  pointer-events: none;
+  display: grid;
+  place-items: center;
+  animation: rouletteBurstFade 1.7s ease-out both;
+}
+
+.roulette-win-burst__halo {
+  position: absolute;
+  width: min(56vw, 390px);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(248, 211, 109, 0.30), transparent 58%);
+  border: 2px solid rgba(248, 211, 109, 0.56);
+  box-shadow: 0 0 70px rgba(248, 211, 109, 0.4);
+  animation: rouletteWinHalo 1.15s cubic-bezier(.18,.9,.25,1) both;
+}
+
+.roulette-win-burst__number {
+  color: #ffe58a;
+  font-size: clamp(3rem, 10vw, 8rem);
+  font-weight: 950;
+  letter-spacing: -0.06em;
+  text-shadow: 0 6px 0 rgba(0,0,0,0.22), 0 0 28px rgba(255, 215, 96, 0.72);
+  animation: rouletteWinNumber 1.25s cubic-bezier(.16,1.3,.32,1) both;
+}
+
+.roulette-win-burst__label {
+  margin-top: clamp(5rem, 13vw, 9rem);
+  color: rgba(255,255,255,0.9);
+  text-transform: uppercase;
+  font-weight: 800;
+  letter-spacing: 0.24em;
+  font-size: clamp(0.75rem, 2vw, 1rem);
+}
+
+.roulette-win-burst i {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+  background: hsl(calc(var(--i) * 23deg), 86%, 60%);
+  box-shadow: 0 0 16px currentColor;
+  animation: rouletteSpark 1.25s cubic-bezier(.2,.85,.3,1) both;
+  animation-delay: calc(var(--i) * 14ms);
+}
+
+@keyframes rouletteBurstFade { 0%, 82% { opacity: 1; } 100% { opacity: 0; visibility: hidden; } }
+@keyframes rouletteWinHalo { from { transform: scale(.3); opacity: 0; } 35% { opacity: 1; } to { transform: scale(1.32); opacity: 0; } }
+@keyframes rouletteWinNumber { 0% { transform: translateY(26px) scale(.55); opacity: 0; } 46% { transform: translateY(-8px) scale(1.13); opacity: 1; } 100% { transform: translateY(0) scale(1); opacity: 1; } }
+@keyframes rouletteSpark { 0% { opacity: 0; transform: rotate(calc(var(--i) * 18deg)) translate(0) scale(.4); } 16% { opacity: 1; } 100% { opacity: 0; transform: rotate(calc(var(--i) * 18deg)) translateY(calc(-90px - (var(--i) % 6) * 20px)) scale(1.15); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .roulette-win-burst, .roulette-win-burst * { animation-duration: 1ms !important; }
+}

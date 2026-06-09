@@ -210,6 +210,9 @@ export default function Game({ isSolo = false }: GameProps) {
   const showWinning = phase === 'SETTLEMENT' && targetNumber !== null;
   const winningDisplay = targetNumber !== null ? displayLabel(targetNumber) : '';
   const isGameOver = isSolo && gameState.status === 'finished';
+  const myRoundNet = roundResult?.results
+    ?.filter((r: any) => r.playerId === sessionId)
+    ?.reduce((sum: number, r: any) => sum + (r.won ? r.payout - r.amount : -r.amount), 0) ?? 0;
 
   const soloBankroll = isSolo ? myPlayer?.bankroll ?? 0 : 0;
   const soloAvailableBankroll = isSolo ? soloBankroll - (myPlayer?.totalBetThisRound ?? 0) : 0;
@@ -432,6 +435,16 @@ export default function Game({ isSolo = false }: GameProps) {
             </div>
           </div>
         </>
+      )}
+
+
+      {phase === 'SETTLEMENT' && myRoundNet > 0 && (
+        <div className="roulette-win-burst" aria-hidden="true">
+          <div className="roulette-win-burst__halo" />
+          <div className="roulette-win-burst__number">+${myRoundNet}</div>
+          <div className="roulette-win-burst__label">Winner</div>
+          {Array.from({ length: 20 }).map((_, i) => <i key={i} style={{ ['--i' as any]: i }} />)}
+        </div>
       )}
 
       {/* Ghost chip during drag */}
