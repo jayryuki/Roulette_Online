@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Button, ThemeToggle } from '@games/ui';
+import { Button } from '@games/ui';
+import RouletteThemeToggle from './RouletteThemeToggle';
 import { useRouletteRoom } from '../hooks/useRouletteRoom';
 import { useIsMobile } from '../hooks/useIsMobile';
 
@@ -106,7 +107,7 @@ export default function Lobby() {
       <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'center' }}>
         <Button size="lg" onClick={handlePlay} disabled={loading} style={isMobile ? { minHeight: '44px' } : undefined}>Play</Button>
         <Button size="lg" variant="secondary" onClick={handlePlaySolo} disabled={loading} style={isMobile ? { minHeight: '44px' } : undefined}>Play Solo</Button>
-        <ThemeToggle style={isMobile ? { minHeight: '44px', minWidth: '44px' } : undefined} />
+        <RouletteThemeToggle style={isMobile ? { minHeight: '44px', minWidth: '44px' } : undefined} />
       </div>
 
       {(error || roomError) && <div style={{ color: 'var(--danger)', fontSize: '0.8125rem' }}>{error || roomError}</div>}

@@ -335,8 +335,8 @@ export default function BettingGrid({
               key={bt}
               data-bet-type={bt}
               onClick={() => handleOutsideBet(bt)}
-              className="rg-cell rg-outside-cell rg-even-cell"
-              style={bg ? { backgroundColor: bg, color: fg } : undefined}
+              className={`rg-cell rg-outside-cell rg-even-cell ${bt === 'red' ? 'rg-red-bet' : bt === 'black' ? 'rg-black-bet' : ''}`}
+              style={bg ? { background: bg, color: fg } : undefined}
             >
               {l}
             </button>

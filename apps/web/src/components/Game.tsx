@@ -5,7 +5,8 @@ import { useRouletteSolo } from '../hooks/useRouletteSolo';
 import { useIsMobile } from '../hooks/useIsMobile';
 import { useDragChip } from '../hooks/useDragChip';
 import { detectDropZone } from '../lib/dropZones';
-import { Button, ThemeToggle } from '@games/ui';
+import { Button } from '@games/ui';
+import RouletteThemeToggle from './RouletteThemeToggle';
 import Wheel2D from './Wheel2D';
 import BettingGrid from './BettingGrid';
 import ChipTray from './ChipTray';
@@ -268,7 +269,7 @@ export default function Game({ isSolo = false }: GameProps) {
             </button>
           )}
 
-          <ThemeToggle style={isMobile ? { minHeight: "44px", minWidth: "44px" } : undefined} />
+          <RouletteThemeToggle style={isMobile ? { minHeight: "44px", minWidth: "44px" } : undefined} />
         </div>
       </header>
 
