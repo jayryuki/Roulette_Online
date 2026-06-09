@@ -95,11 +95,11 @@ function chipSnapScreen(betType: string, cells: Map<string, MeasuredCell>): { sx
       const otherCell = otherNum != null ? cells.get(String(otherNum)) : null;
       if (hasZero && otherCell) {
         const zc = cells.get('0');
-        if (zc) return { sx: (zc.rect.right + otherCell.rect.left) / 2, sy: zc.rect.top + zc.rect.height / 2 };
+        if (zc) return { sx: (zc.rect.right + otherCell.rect.left) / 2, sy: otherCell.rect.top + otherCell.rect.height / 2 };
       }
       if (hasDz && otherCell) {
         const dzc = cells.get('37');
-        if (dzc) return { sx: (dzc.rect.right + otherCell.rect.left) / 2, sy: dzc.rect.top + dzc.rect.height / 2 };
+        if (dzc) return { sx: (dzc.rect.right + otherCell.rect.left) / 2, sy: otherCell.rect.top + otherCell.rect.height / 2 };
       }
       if (da.row === db.row) return { sx: (da.rect.right + db.rect.left) / 2, sy: da.rect.top + da.rect.height / 2 };
       return { sx: da.rect.left + da.rect.width / 2, sy: (da.rect.bottom + db.rect.top) / 2 };
@@ -122,9 +122,9 @@ function chipSnapScreen(betType: string, cells: Map<string, MeasuredCell>): { sx
       return { sx: (d1.rect.right + d2.rect.left) / 2, sy: d1.rect.top + d1.rect.height * 0.25 };
     }
     case 'five': {
-      const d0 = cells.get('0'), d1 = cells.get('1');
-      if (!d0 || !d1) return null;
-      return { sx: (d0.rect.right + d1.rect.left) / 2, sy: d0.rect.top + d0.rect.height / 2 };
+      const d37 = cells.get('37'), d1 = cells.get('1');
+      if (!d37 || !d1) return null;
+      return { sx: (d37.rect.right + d1.rect.left) / 2, sy: (d37.rect.bottom + d1.rect.top) / 2 };
     }
     default: {
       const d = cells.get(betType); if (!d) return null;
@@ -239,7 +239,7 @@ export default function BettingGrid({
   const chipD = chipR * 2;
 
   return (
-    <div style={{ position: 'relative', width: 'fit-content', maxWidth: '100%', margin: '0 auto' }}>
+    <div className="rg-table-card">
       <div
         ref={gridRef}
         data-grid
@@ -249,12 +249,7 @@ export default function BettingGrid({
       >
         {/* Drop preview label */}
         {dragState?.isDragging && dropPreview && (
-          <div style={{
-            position: 'fixed', left: dropPreview.snapX, top: dropPreview.snapY - 30,
-            transform: 'translateX(-50%)', background: 'rgba(0,0,0,0.85)', color: '#fff',
-            padding: '3px 10px', borderRadius: '4px', fontSize: '11px', fontWeight: 600,
-            whiteSpace: 'nowrap', zIndex: 10000, pointerEvents: 'none',
-          }}>
+          <div className="rg-drop-preview" style={{ left: dropPreview.snapX, top: dropPreview.snapY - 30 }}>
             {dropPreview.label} ({dropPreview.coveredNumbers.map(n => n === 37 ? '00' : String(n)).join(', ')})
           </div>
         )}

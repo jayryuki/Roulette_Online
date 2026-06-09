@@ -67,6 +67,51 @@ describe('detectDropZone — 0/00 splits and top line', () => {
     expect(result?.coveredNumbers).toContain(0);
   });
 
+  it('split_0_3 at the exact right edge of 0 aligns with top-row 3', () => {
+    const cell3 = cellRects.find(c => c.number === 3)!;
+    const result = detectDropZone(
+      zeroRect.x + zeroRect.width,
+      cell3.y + cell3.height / 2,
+      cellRects, zeroRect, doubleZeroRect,
+    );
+    expect(result?.betType).toBe('split_0_3');
+    expect(result?.snapY).toBe(cell3.y + cell3.height / 2);
+  });
+
+  it('split_2_37 at the exact right edge of 00 aligns with middle-row 2', () => {
+    const cell2 = cellRects.find(c => c.number === 2)!;
+    const result = detectDropZone(
+      doubleZeroRect.x + doubleZeroRect.width,
+      cell2.y + cell2.height / 2,
+      cellRects, zeroRect, doubleZeroRect,
+    );
+    expect(result?.betType).toBe('split_2_37');
+    expect(result?.snapY).toBe(cell2.y + cell2.height / 2);
+  });
+
+  it('split_1_37 remains reachable below the top-line corner', () => {
+    const cell1 = cellRects.find(c => c.number === 1)!;
+    const result = detectDropZone(
+      doubleZeroRect.x + doubleZeroRect.width,
+      cell1.y + cell1.height / 2,
+      cellRects, zeroRect, doubleZeroRect,
+    );
+    expect(result?.betType).toBe('split_1_37');
+    expect(result?.snapY).toBe(cell1.y + cell1.height / 2);
+  });
+
+  it('top line has a small target and does not steal the 00-2 split', () => {
+    const cell2 = cellRects.find(c => c.number === 2)!;
+    const result = detectDropZone(
+      doubleZeroRect.x + doubleZeroRect.width,
+      cell2.y + cell2.height / 2,
+      cellRects, zeroRect, doubleZeroRect,
+    );
+    expect(result?.betType).not.toBe('five');
+    expect(result?.betType).toBe('split_2_37');
+  });
+
+
   it('straight_0 when cursor is in the center of 0', () => {
     const result = detectDropZone(
       zeroRect.x + zeroRect.width / 2,

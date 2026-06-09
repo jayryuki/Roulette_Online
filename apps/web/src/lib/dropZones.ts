@@ -82,50 +82,25 @@ export function detectDropZone(
   }
 
   // ---- Splits on the right edge of 0 / 00 with the first column ----
-  // These MUST be checked before straight bets because straight zones overlap edge zones.
-  if (zeroRect) {
-    const col0Cells = cellRects.filter(c => c.col === 0);
-    const rightEdge = zeroRect.x + zeroRect.width;
-    const edgeThreshold = zeroRect.width * EDGE_THRESHOLD;
-    if (x >= rightEdge - edgeThreshold && x <= rightEdge + edgeThreshold + GAP_TOLERANCE) {
-      // Find the nearest col-0 cell by vertical distance to its center
-      let bestCell: CellRect | null = null;
-      let bestDist = Infinity;
-      for (const c of col0Cells) {
-        const cy = c.y + c.height / 2;
-        const dist = Math.abs(y - cy);
-        if (dist < bestDist) { bestDist = dist; bestCell = c; }
-      }
-      if (bestCell && y >= zeroRect.y - GAP_TOLERANCE && y <= zeroRect.y + zeroRect.height + GAP_TOLERANCE) {
-        const a = 0, b = bestCell.number;
-        const sorted = [a, b].sort((p, q) => p - q);
-        const snapX = (rightEdge + bestCell.x) / 2;
-        const snapY = zeroRect.y + zeroRect.height / 2;
-        return { betType: `split_${sorted.join('_')}`, label: `Split 0-${b === 37 ? '00' : String(b)}`, coveredNumbers: sorted, snapX, snapY };
-      }
-    }
-  }
-
-  // ---- Five-number bet (0, 00, 1, 2, 3) ----
-  // Only at the corner between 0/00 and the first column (near cell 1).
-  // This must be checked BEFORE the 00→col0 split because the corner is
-  // inside the right-edge zone of 00.
+  // Treat the seam between the zero stack and the first number column as three
+  // clear bands, aligned to 3 / 2 / 1. This keeps every 0/00 split reachable
+  // and avoids the top-line corner swallowing normal split drops.
   if (zeroRect && doubleZeroRect) {
-    const cell1 = cellRects.find(c => c.number === 1);
-    if (cell1) {
-      const cornerX = (zeroRect.x + zeroRect.width + cell1.x) / 2;
-      const cornerY = (doubleZeroRect.y + doubleZeroRect.height + cell1.y) / 2;
-      const threshold = cell1.width * EDGE_THRESHOLD;
-      if (Math.abs(x - cornerX) <= threshold && Math.abs(y - cornerY) <= threshold) {
-        return { betType: 'five', label: 'Top Line (0-00-1-2-3)', coveredNumbers: [0, 37, 1, 2, 3], snapX: cornerX, snapY: cornerY };
-      }
-    }
-  }
-  if (doubleZeroRect) {
     const col0Cells = cellRects.filter(c => c.col === 0);
-    const rightEdge = doubleZeroRect.x + doubleZeroRect.width;
-    const edgeThreshold = doubleZeroRect.width * EDGE_THRESHOLD;
-    if (x >= rightEdge - edgeThreshold && x <= rightEdge + edgeThreshold + GAP_TOLERANCE) {
+    const seamRight = Math.max(zeroRect.x + zeroRect.width, doubleZeroRect.x + doubleZeroRect.width);
+    const edgeThreshold = Math.max(zeroRect.width, doubleZeroRect.width) * EDGE_THRESHOLD;
+
+    if (x >= seamRight - edgeThreshold && x <= seamRight + edgeThreshold + GAP_TOLERANCE) {
+      const cell1 = cellRects.find(c => c.number === 1);
+      if (cell1) {
+        const cornerX = (seamRight + cell1.x) / 2;
+        const cornerY = (doubleZeroRect.y + doubleZeroRect.height + cell1.y) / 2;
+        const threshold = Math.min(cell1.width, cell1.height) * 0.18;
+        if (Math.abs(x - cornerX) <= threshold && Math.abs(y - cornerY) <= threshold) {
+          return { betType: 'five', label: 'Top Line (0-00-1-2-3)', coveredNumbers: [0, 37, 1, 2, 3], snapX: cornerX, snapY: cornerY };
+        }
+      }
+
       let bestCell: CellRect | null = null;
       let bestDist = Infinity;
       for (const c of col0Cells) {
@@ -133,12 +108,14 @@ export function detectDropZone(
         const dist = Math.abs(y - cy);
         if (dist < bestDist) { bestDist = dist; bestCell = c; }
       }
-      if (bestCell && y >= doubleZeroRect.y - GAP_TOLERANCE && y <= doubleZeroRect.y + doubleZeroRect.height + GAP_TOLERANCE) {
-        const a = 37, b = bestCell.number;
-        const sorted = [a, b].sort((p, q) => p - q);
-        const snapX = (rightEdge + bestCell.x) / 2;
-        const snapY = doubleZeroRect.y + doubleZeroRect.height / 2;
-        return { betType: `split_${sorted.join('_')}`, label: `Split 00-${b === 37 ? '00' : String(b)}`, coveredNumbers: sorted, snapX, snapY };
+
+      if (bestCell && bestDist <= bestCell.height * 0.75 + GAP_TOLERANCE) {
+        const zeroNumber = bestCell.row === 0 ? 0 : 37;
+        const sorted = [zeroNumber, bestCell.number].sort((p, q) => p - q);
+        const snapX = (seamRight + bestCell.x) / 2;
+        const snapY = bestCell.y + bestCell.height / 2;
+        const zeroLabel = zeroNumber === 37 ? '00' : '0';
+        return { betType: `split_${sorted.join('_')}`, label: `Split ${zeroLabel}-${bestCell.number}`, coveredNumbers: sorted, snapX, snapY };
       }
     }
   }
