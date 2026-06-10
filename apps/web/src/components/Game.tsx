@@ -172,9 +172,9 @@ export default function Game({ isSolo = false }: GameProps) {
   }, [moveDrag, endDrag, send]);
 
   const handleLeave = useCallback(() => {
-    leave();
-    window.location.reload();
-  }, [leave]);
+    try { leave(); } catch {}
+    navigate('/');
+  }, [leave, navigate]);
 
   const handleToggleMute = useCallback(() => {
     setMuted(toggleMute());
