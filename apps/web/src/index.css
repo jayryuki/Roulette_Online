@@ -876,7 +876,7 @@
 
   .game-over-modal {
     padding: 1.5rem;
-    max-width: calc(100vw - 2rem);
+    max-width: 100%;
   }
 
   .game-over-modal-title {
@@ -1368,7 +1368,18 @@
   .game-root {
     min-height: 100dvh;
     height: auto !important;
-    overflow: visible !important;
+    width: 100%;
+    max-width: 100%;
+    overflow-x: clip !important;
+    overflow-y: auto !important;
+  }
+
+  .game-root > *,
+  .game-main > *,
+  .game-play-area > * {
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
   }
 
   .game-main,
@@ -1376,7 +1387,10 @@
   .game-grid-wrap,
   .game-chip-tray-wrap,
   .game-drawer-content {
+    max-width: 100%;
+    min-width: 0;
     touch-action: pan-y pan-x;
     -webkit-overflow-scrolling: touch;
+    box-sizing: border-box;
   }
 }
