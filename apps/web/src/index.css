@@ -369,8 +369,6 @@
     min-height: 100dvh;
     height: auto;
     width: 100%;
-    max-width: 100vw;
-    margin: 0 auto;
     display: flex;
     flex-direction: column;
     background:
@@ -381,6 +379,9 @@
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
     box-sizing: border-box;
+    padding-left: max(0.75rem, env(safe-area-inset-left));
+    padding-right: max(0.75rem, env(safe-area-inset-right));
+    padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
   }
 
   .game-loading {
@@ -403,7 +404,7 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: max(0.5rem, env(safe-area-inset-top)) max(0.875rem, env(safe-area-inset-right)) 0.5rem max(0.875rem, env(safe-area-inset-left));
+    padding: max(0.5rem, env(safe-area-inset-top)) 0 0.5rem 0;
     background: rgba(0,0,0,0.25);
     flex-shrink: 0;
     backdrop-filter: blur(4px);
