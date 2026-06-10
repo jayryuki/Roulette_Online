@@ -366,14 +366,17 @@
 /* ── Game Layout ── */
 @layer components {
   .game-root {
-    height: 100dvh;
+    min-height: 100dvh;
+    height: auto;
     display: flex;
     flex-direction: column;
     background:
       radial-gradient(circle at 50% -12%, var(--roulette-room-vignette), transparent 34%),
       radial-gradient(circle at 18% 115%, rgba(184, 92, 58, 0.10), transparent 28%),
       linear-gradient(180deg, var(--roulette-room-bg), var(--roulette-room-bg-deep));
-    overflow: hidden;
+    overflow-x: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
     max-width: 100vw;
   }
 
