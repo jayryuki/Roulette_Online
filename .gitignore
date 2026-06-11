@@ -3,6 +3,7 @@ dist/
 *.tsbuildinfo
 .playwright-mcp/
 old_screenshots/
+codedb.snapshot
 .env
 *.log
 .DS_Store
