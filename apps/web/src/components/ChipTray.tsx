@@ -13,11 +13,11 @@ interface ChipTrayProps {
 const DENOMINATIONS = [1, 5, 25, 100, 500];
 
 const CHIP_STYLES: Record<number, { bg: string; text: string; border: string }> = {
-  1:   { bg: '#ffffff', text: '#2B2926', border: '#D9D2C8' },
-  5:   { bg: 'var(--roulette-red)', text: '#ffffff', border: '#c45a5a' },
-  25:  { bg: 'var(--roulette-green)', text: '#ffffff', border: '#5a9e6e' },
-  100: { bg: 'var(--roulette-black)', text: '#ffffff', border: '#4a4a52' },
-  500: { bg: 'var(--accent-warm)', text: '#ffffff', border: '#B85C3A' },
+  1:   { bg: 'var(--chip-1-bg)', text: 'var(--chip-1-text)', border: 'var(--chip-1-border)' },
+  5:   { bg: 'var(--chip-5-bg)', text: 'var(--chip-5-text)', border: 'var(--chip-5-border)' },
+  25:  { bg: 'var(--chip-25-bg)', text: 'var(--chip-25-text)', border: 'var(--chip-25-border)' },
+  100: { bg: 'var(--chip-100-bg)', text: 'var(--chip-100-text)', border: 'var(--chip-100-border)' },
+  500: { bg: 'var(--chip-500-bg)', text: 'var(--chip-500-text)', border: 'var(--chip-500-border)' },
 };
 
 export default function ChipTray({ selectedAmount, onSelectAmount, onClearBets, onRepeatBet, canBet, hasLastBets, isMobile = false, onStartDrag, wasDragging }: ChipTrayProps) {
@@ -58,6 +58,7 @@ export default function ChipTray({ selectedAmount, onSelectAmount, onClearBets, 
                 border: `2px solid ${isSelected ? 'var(--accent-warm)' : style.border}`,
                 backgroundColor: style.bg,
                 color: style.text,
+                textShadow: 'var(--game-text-outline-shadow)',
                 fontWeight: 700,
                 fontSize: isMobile ? '11px' : '10px',
                 cursor: canBet ? 'pointer' : 'not-allowed',
@@ -86,7 +87,8 @@ export default function ChipTray({ selectedAmount, onSelectAmount, onClearBets, 
         style={{
           padding: isMobile ? '0.5rem 0.75rem' : '0.4375rem 0.875rem',
           background: 'var(--accent-warm)',
-          color: '#ffffff',
+          color: 'var(--game-on-table-text)',
+          textShadow: 'var(--game-text-outline-shadow)',
           border: 'none',
           borderRadius: '8px',
           fontSize: isMobile ? '0.8125rem' : '0.75rem',
@@ -107,7 +109,8 @@ export default function ChipTray({ selectedAmount, onSelectAmount, onClearBets, 
         style={{
           padding: isMobile ? '0.5rem 0.75rem' : '0.4375rem 0.875rem',
           background: 'var(--danger)',
-          color: '#ffffff',
+          color: 'var(--game-on-table-text)',
+          textShadow: 'var(--game-text-outline-shadow)',
           border: 'none',
           borderRadius: '8px',
           fontSize: isMobile ? '0.8125rem' : '0.75rem',

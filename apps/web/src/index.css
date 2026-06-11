@@ -8,26 +8,23 @@
 @layer base {
   :root {
     /* Roulette-specific overrides: classy room chrome + semantic table colors */
-    --roulette-room-bg: #f0e8dc;
-    --roulette-room-bg-deep: #d8cab7;
-    --roulette-room-vignette: rgba(86, 48, 30, 0.16);
-    --roulette-chrome: rgba(255, 252, 246, 0.86);
-    --roulette-chrome-strong: rgba(255, 252, 246, 0.94);
-    --roulette-chrome-border: rgba(63, 45, 31, 0.18);
-    --roulette-chrome-shadow: rgba(71, 45, 26, 0.18);
-    --roulette-chrome-text: #2b2926;
-    --roulette-chrome-text-muted: #6b665e;
-    --surface-table: #103c2b;
-    --surface-table-felt: #17623b;
-    --surface-table-dark: #08251b;
-    --roulette-red: #B91C1C;
-    --roulette-black: #111827;
-    --roulette-green: #15803D;
-    --chip-red: #c45a5a;
-    --chip-blue: #4a7abd;
-    --chip-green: #5a9e6e;
-    --chip-black: #2c2c30;
-    --chip-gold: #c4a040;
+    --roulette-room-bg: var(--game-table-felt-deep);
+    --roulette-room-bg-deep: var(--game-table-felt-deep);
+    --roulette-room-vignette: var(--game-table-glow);
+    --roulette-chrome: var(--game-panel-overlay);
+    --roulette-chrome-strong: var(--game-panel-overlay);
+    --roulette-chrome-border: var(--game-panel-border);
+    --roulette-chrome-shadow: rgba(0, 0, 0, 0.18);
+    --roulette-chrome-text: var(--text-primary);
+    --roulette-chrome-text-muted: var(--text-secondary);
+    --surface-table: var(--game-table-bg);
+    --surface-table-felt: var(--game-table-felt);
+    --surface-table-dark: var(--game-table-felt-deep);
+    --chip-red: var(--chip-5-bg);
+    --chip-blue: var(--chip-100-bg);
+    --chip-green: var(--chip-25-bg);
+    --chip-black: var(--chip-100-bg);
+    --chip-gold: var(--chip-500-bg);
 
     /* Grid cell sizing - responsive */
     --rg-gap: clamp(2px, 0.35vw, 4px);
@@ -54,7 +51,7 @@
   body {
     background:
       radial-gradient(circle at 50% 0%, var(--roulette-room-vignette), transparent 36%),
-      linear-gradient(180deg, var(--roulette-room-bg), var(--roulette-room-bg-deep));
+      var(--game-table-bg);
     color: var(--text-primary);
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     margin: 0;
@@ -105,21 +102,18 @@
 
 /* Roulette dark variables live outside Tailwind layers so they win over :root game tokens. */
 .dark {
-  --roulette-room-bg: #11100f;
-  --roulette-room-bg-deep: #050505;
-  --roulette-room-vignette: rgba(212, 169, 93, 0.10);
-  --roulette-chrome: rgba(20, 19, 18, 0.84);
-  --roulette-chrome-strong: rgba(28, 27, 25, 0.94);
-  --roulette-chrome-border: rgba(216, 186, 126, 0.18);
+  --roulette-room-bg: var(--game-table-felt-deep);
+  --roulette-room-bg-deep: var(--game-table-felt-deep);
+  --roulette-room-vignette: var(--game-table-glow);
+  --roulette-chrome: var(--game-panel-overlay);
+  --roulette-chrome-strong: var(--game-panel-overlay);
+  --roulette-chrome-border: var(--game-panel-border);
   --roulette-chrome-shadow: rgba(0, 0, 0, 0.34);
-  --roulette-chrome-text: #ede7db;
-  --roulette-chrome-text-muted: #b9ad9d;
-  --surface-table: #0f3f2a;
-  --surface-table-felt: #155b38;
-  --surface-table-dark: #061b13;
-  --roulette-red: #c82020;
-  --roulette-black: #07090d;
-  --roulette-green: #0f8f4a;
+  --roulette-chrome-text: var(--text-primary);
+  --roulette-chrome-text-muted: var(--text-secondary);
+  --surface-table: var(--game-table-bg);
+  --surface-table-felt: var(--game-table-felt);
+  --surface-table-dark: var(--game-table-felt-deep);
 }
 
 /* ── Roulette Grid System ── */
@@ -132,9 +126,9 @@
     padding: clamp(0.35rem, 1.3vw, 0.85rem);
     border-radius: clamp(12px, 2vw, 22px);
     background:
-      radial-gradient(circle at 50% 12%, rgba(255,255,255,0.12), transparent 30%),
-      linear-gradient(145deg, rgba(35, 128, 75, 0.98), rgba(13, 76, 43, 0.98));
-    border: 1px solid rgba(255,255,255,0.14);
+      radial-gradient(circle at 50% 12%, var(--game-table-glow), transparent 30%),
+      var(--game-table-felt);
+    border: 1px solid var(--game-panel-border);
     box-shadow: inset 0 0 0 2px rgba(255,255,255,0.05), inset 0 0 34px rgba(0,0,0,0.25), 0 10px 30px rgba(0,0,0,0.28);
   }
 
@@ -198,7 +192,7 @@
     font-size: var(--rg-outside-font);
     font-weight: 600;
     color: rgba(255,255,255,0.92);
-    background: linear-gradient(180deg, rgba(34, 99, 69, 0.95), rgba(16, 59, 42, 0.95));
+    background: var(--game-panel-overlay);
     flex: 1;
     text-transform: uppercase;
     letter-spacing: 0.035em;
@@ -373,8 +367,10 @@
     flex-direction: column;
     background:
       radial-gradient(circle at 50% -12%, var(--roulette-room-vignette), transparent 34%),
-      radial-gradient(circle at 18% 115%, rgba(184, 92, 58, 0.10), transparent 28%),
-      linear-gradient(180deg, var(--roulette-room-bg), var(--roulette-room-bg-deep));
+      radial-gradient(circle at 18% 115%, var(--game-table-glow), transparent 28%),
+      var(--game-table-bg);
+    color: var(--game-on-table-text);
+    text-shadow: var(--game-text-outline-shadow);
     overflow-x: hidden;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
@@ -391,7 +387,7 @@
     justify-content: center;
     background:
       radial-gradient(circle at 50% 0%, var(--roulette-room-vignette), transparent 34%),
-      linear-gradient(180deg, var(--roulette-room-bg), var(--roulette-room-bg-deep));
+      var(--game-table-bg);
   }
 
   .game-loading-text {
@@ -866,7 +862,7 @@
 
   .game-chip-tray-wrap {
     padding: 0.25rem 0.5rem;
-    background: var(--surface-table);
+    background: var(--game-table-bg);
     border-top: 1px solid rgba(255,255,255,0.1);
   }
 
@@ -1197,23 +1193,24 @@
 
 .rg-table-card {
   background:
-    radial-gradient(circle at 50% 12%, rgba(255,255,255,0.13), transparent 30%),
-    linear-gradient(145deg, var(--surface-table-felt), var(--surface-table));
-  border-color: rgba(255,255,255,0.18) !important;
+    radial-gradient(circle at 50% 12%, var(--game-table-glow), transparent 30%),
+    var(--game-table-felt);
+  border-color: var(--game-panel-border) !important;
 }
 
 .rg-outside-cell {
-  color: rgba(255,255,255,0.96) !important;
-  background: linear-gradient(180deg, rgba(28, 91, 62, 0.96), rgba(11, 55, 37, 0.96));
+  color: var(--game-on-table-text) !important;
+  background: var(--game-panel-overlay);
+  text-shadow: var(--game-text-outline-shadow);
 }
 
 .rg-red-bet {
-  background: linear-gradient(180deg, #cf2525, var(--roulette-red)) !important;
+  background: linear-gradient(180deg, var(--roulette-pocket-red-highlight), var(--roulette-red)) !important;
   border-color: rgba(255,255,255,0.24) !important;
 }
 
 .rg-black-bet {
-  background: linear-gradient(180deg, #20242c, var(--roulette-black)) !important;
+  background: linear-gradient(180deg, var(--roulette-pocket-black-highlight), var(--roulette-black)) !important;
   border-color: rgba(255,255,255,0.20) !important;
 }
 
@@ -1227,6 +1224,19 @@
 .rg-cell:active:not(:disabled) {
   transform: translateY(1px) scale(0.98);
   filter: brightness(1.08);
+}
+
+.game-root svg text,
+.game-root .rg-cell,
+.game-root .rg-chip {
+  text-shadow: var(--game-text-outline-shadow);
+}
+
+.game-root svg text {
+  paint-order: stroke fill;
+  stroke: var(--game-text-outline);
+  stroke-width: 2px;
+  stroke-linejoin: round;
 }
 
 .roulette-theme-toggle {

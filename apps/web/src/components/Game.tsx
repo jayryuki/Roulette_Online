@@ -5,7 +5,7 @@ import { useRouletteSolo } from '../hooks/useRouletteSolo';
 import { useIsMobile } from '../hooks/useIsMobile';
 import { useDragChip } from '../hooks/useDragChip';
 import { detectDropZone } from '../lib/dropZones';
-import { Button } from '@games/ui';
+import { Button, useWinBurst, WinBurst } from '@games/ui';
 import RouletteThemeToggle from './RouletteThemeToggle';
 import Wheel2D from './Wheel2D';
 import BettingGrid from './BettingGrid';
@@ -184,6 +184,12 @@ export default function Game({ isSolo = false }: GameProps) {
     send('change-name', { displayName: name });
   }, [send]);
 
+  const hookPhase = gameState?.phase ?? 'LOBBY';
+  const hookMyRoundNet = roundResult?.results
+    ?.filter((r: any) => r.playerId === sessionId)
+    ?.reduce((sum: number, r: any) => sum + (r.won ? r.payout - r.amount : -r.amount), 0) ?? 0;
+  const winBurst = useWinBurst(Boolean(gameState && connected && hookPhase === 'SETTLEMENT' && hookMyRoundNet > 0), hookMyRoundNet);
+
   if (!gameState || !connected) {
     return (
       <div className="game-loading">
@@ -211,9 +217,6 @@ export default function Game({ isSolo = false }: GameProps) {
   const showWinning = phase === 'SETTLEMENT' && targetNumber !== null;
   const winningDisplay = targetNumber !== null ? displayLabel(targetNumber) : '';
   const isGameOver = isSolo && gameState.status === 'finished';
-  const myRoundNet = roundResult?.results
-    ?.filter((r: any) => r.playerId === sessionId)
-    ?.reduce((sum: number, r: any) => sum + (r.won ? r.payout - r.amount : -r.amount), 0) ?? 0;
 
   const soloBankroll = isSolo ? myPlayer?.bankroll ?? 0 : 0;
   const soloAvailableBankroll = isSolo ? soloBankroll - (myPlayer?.totalBetThisRound ?? 0) : 0;
@@ -439,14 +442,8 @@ export default function Game({ isSolo = false }: GameProps) {
       )}
 
 
-      {phase === 'SETTLEMENT' && myRoundNet > 0 && (
-        <div className="roulette-win-burst" aria-hidden="true">
-          <div className="roulette-win-burst__halo" />
-          <div className="roulette-win-burst__number">+${myRoundNet}</div>
-          <div className="roulette-win-burst__label">Winner</div>
-          {Array.from({ length: 20 }).map((_, i) => <i key={i} style={{ ['--i' as any]: i }} />)}
-        </div>
-      )}
+      {/* Win burst animation */}
+      {winBurst.shouldRender && <WinBurst containerRef={winBurst.containerRef} amount={winBurst.amount} />}
 
       {/* Ghost chip during drag */}
       {dragState?.isDragging && (

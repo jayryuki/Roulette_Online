@@ -139,28 +139,28 @@ export default function Wheel2D({ targetNumber, spinning }: Wheel2DProps) {
         <defs>
           {/* Metallic rim gradient */}
           <radialGradient id="rimGrad" cx="50%" cy="50%" r="50%">
-            <stop offset="70%" stopColor="#b8a078" />
-            <stop offset="85%" stopColor="#8c7348" />
-            <stop offset="95%" stopColor="#d4bc8a" />
-            <stop offset="100%" stopColor="#6b5a36" />
+            <stop offset="70%" stopColor="var(--roulette-wheel-rim-1)" />
+            <stop offset="85%" stopColor="var(--roulette-wheel-rim-2)" />
+            <stop offset="95%" stopColor="var(--roulette-wheel-metal)" />
+            <stop offset="100%" stopColor="var(--roulette-wheel-rim-2)" />
           </radialGradient>
           {/* Ball track */}
           <radialGradient id="trackGrad" cx="50%" cy="50%" r="50%">
-            <stop offset="80%" stopColor="#3a3225" />
-            <stop offset="92%" stopColor="#1a1610" />
-            <stop offset="100%" stopColor="#0a0806" />
+            <stop offset="80%" stopColor="var(--roulette-wheel-track)" />
+            <stop offset="92%" stopColor="var(--game-table-felt-deep)" />
+            <stop offset="100%" stopColor="var(--game-table-felt-deep)" />
           </radialGradient>
           {/* Center hub wood */}
           <radialGradient id="hubGrad" cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stopColor="#2a2520" />
-            <stop offset="70%" stopColor="#1a1612" />
-            <stop offset="100%" stopColor="#0f0d0a" />
+            <stop offset="0%" stopColor="var(--roulette-wheel-hub)" />
+            <stop offset="70%" stopColor="var(--game-table-felt-deep)" />
+            <stop offset="100%" stopColor="var(--game-table-felt-deep)" />
           </radialGradient>
           {/* Inner hub metallic */}
           <radialGradient id="innerHubGrad" cx="40%" cy="40%" r="60%">
-            <stop offset="0%" stopColor="#c4a574" />
-            <stop offset="50%" stopColor="#8c7348" />
-            <stop offset="100%" stopColor="#5a4a2e" />
+            <stop offset="0%" stopColor="var(--roulette-wheel-metal)" />
+            <stop offset="50%" stopColor="var(--roulette-wheel-rim-2)" />
+            <stop offset="100%" stopColor="var(--roulette-wheel-hub)" />
           </radialGradient>
           {/* Shadow filter */}
           <filter id="pocketShadow" x="-20%" y="-20%" width="140%" height="140%">
@@ -169,10 +169,10 @@ export default function Wheel2D({ targetNumber, spinning }: Wheel2DProps) {
         </defs>
 
         {/* Outer wood rim */}
-        <circle cx={cx} cy={cy} r={outerR} fill="url(#rimGrad)" stroke="#5a4a2e" strokeWidth="1" />
+        <circle cx={cx} cy={cy} r={outerR} fill="url(#rimGrad)" stroke="var(--roulette-wheel-rim-2)" strokeWidth="1" />
 
         {/* Ball track ring */}
-        <circle cx={cx} cy={cy} r={trackR} fill="url(#trackGrad)" stroke="#3a3225" strokeWidth="0.5" />
+        <circle cx={cx} cy={cy} r={trackR} fill="url(#trackGrad)" stroke="var(--roulette-wheel-track)" strokeWidth="0.5" />
 
         {/* Rotating group */}
         <g ref={wheelRef} transform={`rotate(${currentRotation}, ${cx}, ${cy})`}>
@@ -197,8 +197,8 @@ export default function Wheel2D({ targetNumber, spinning }: Wheel2DProps) {
           {pockets.map(({ num, angle, color }) => {
             const sa = angle - POCKET_ANGLE / 2;
             const ea = angle + POCKET_ANGLE / 2;
-            const baseColor = color === 'red' ? '#B91C1C' : color === 'black' ? '#1F2937' : '#15803D';
-            const highlightColor = color === 'red' ? '#DC2626' : color === 'black' ? '#374151' : '#16A34A';
+            const baseColor = color === 'red' ? 'var(--roulette-red)' : color === 'black' ? 'var(--roulette-black)' : 'var(--roulette-green)';
+            const highlightColor = color === 'red' ? 'var(--roulette-pocket-red-highlight)' : color === 'black' ? 'var(--roulette-pocket-black-highlight)' : 'var(--roulette-pocket-green-highlight)';
             const midAngle = angle * Math.PI / 180;
             const tx = cx + numberR * Math.cos(midAngle);
             const ty = cy + numberR * Math.sin(midAngle);
@@ -219,14 +219,14 @@ export default function Wheel2D({ targetNumber, spinning }: Wheel2DProps) {
                 <text
                   x={tx}
                   y={ty}
-                  fill="white"
+                  fill="var(--game-on-table-text)"
                   fontSize={size > 260 ? '8' : '7'}
                   fontWeight="600"
                   textAnchor="middle"
                   dominantBaseline="central"
                   transform={`rotate(${angle + 90}, ${tx}, ${ty})`}
                   fontFamily="'Inter', sans-serif"
-                  style={{ pointerEvents: 'none' }}
+                  style={{ pointerEvents: 'none', paintOrder: 'stroke fill', stroke: 'var(--game-text-outline)', strokeWidth: 2, strokeLinejoin: 'round' }}
                 >
                   {displayLabel(num)}
                 </text>
@@ -235,8 +235,8 @@ export default function Wheel2D({ targetNumber, spinning }: Wheel2DProps) {
           })}
 
           {/* Center hub */}
-          <circle cx={cx} cy={cy} r={hubR} fill="url(#hubGrad)" stroke="#3a3225" strokeWidth="1" />
-          <circle cx={cx} cy={cy} r={innerHubR} fill="url(#innerHubGrad)" stroke="#5a4a2e" strokeWidth="0.5" />
+          <circle cx={cx} cy={cy} r={hubR} fill="url(#hubGrad)" stroke="var(--roulette-wheel-track)" strokeWidth="1" />
+          <circle cx={cx} cy={cy} r={innerHubR} fill="url(#innerHubGrad)" stroke="var(--roulette-wheel-rim-2)" strokeWidth="0.5" />
 
           {/* Decorative center star / turret */}
           <g>
@@ -250,7 +250,7 @@ export default function Wheel2D({ targetNumber, spinning }: Wheel2DProps) {
                 <line
                   key={i}
                   x1={x1} y1={y1} x2={x2} y2={y2}
-                  stroke="#3a2e1a"
+                  stroke="var(--roulette-wheel-metal)"
                   strokeWidth="0.8"
                   opacity="0.6"
                 />
@@ -261,7 +261,7 @@ export default function Wheel2D({ targetNumber, spinning }: Wheel2DProps) {
           <text
             x={cx}
             y={cy}
-            fill="#2a1f10"
+            fill="var(--roulette-wheel-metal)"
             fontSize={size > 260 ? '16' : '13'}
             fontWeight="700"
             textAnchor="middle"
@@ -277,13 +277,13 @@ export default function Wheel2D({ targetNumber, spinning }: Wheel2DProps) {
         <g>
           <polygon
             points={`${cx - 10},${2} ${cx + 10},${2} ${cx},${16}`}
-            fill="#C4A574"
-            stroke="#8C7348"
+            fill="var(--roulette-wheel-metal)"
+            stroke="var(--roulette-wheel-rim-2)"
             strokeWidth="1"
           />
           <polygon
             points={`${cx - 6},${4} ${cx + 6},${4} ${cx},${12}`}
-            fill="#E8D4A8"
+            fill="var(--roulette-wheel-rim-1)"
           />
         </g>
       </svg>

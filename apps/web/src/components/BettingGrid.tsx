@@ -59,11 +59,11 @@ function displayNum(n: number): string {
 function chipBorderColor(category: string | undefined): string {
   switch (category) {
     case 'split':   return 'var(--accent-warm)';
-    case 'corner':  return '#FFD700';
-    case 'street':  return '#00BFFF';
-    case 'sixline': return '#FF69B4';
-    case 'five':    return '#9B59B6';
-    default:        return 'white';
+    case 'corner':  return 'var(--chip-500-bg)';
+    case 'street':  return 'var(--accent-cool)';
+    case 'sixline': return 'var(--playing-card-red)';
+    case 'five':    return 'var(--chip-500-bg)';
+    default:        return 'var(--game-panel-border)';
   }
 }
 
@@ -326,8 +326,8 @@ export default function BettingGrid({
           {[
             { l: '1-18', bt: 'low' },
             { l: 'EVEN', bt: 'even' },
-            { l: 'RED', bt: 'red', bg: 'var(--roulette-red)', fg: '#fff' },
-            { l: 'BLK', bt: 'black', bg: 'var(--roulette-black)', fg: '#fff' },
+            { l: 'RED', bt: 'red', bg: 'var(--roulette-red)', fg: 'var(--game-on-table-text)' },
+            { l: 'BLK', bt: 'black', bg: 'var(--roulette-black)', fg: 'var(--game-on-table-text)' },
             { l: 'ODD', bt: 'odd' },
             { l: '19-36', bt: 'high' },
           ].map(({ l, bt, bg, fg }) => (
@@ -336,7 +336,7 @@ export default function BettingGrid({
               data-bet-type={bt}
               onClick={() => handleOutsideBet(bt)}
               className={`rg-cell rg-outside-cell rg-even-cell ${bt === 'red' ? 'rg-red-bet' : bt === 'black' ? 'rg-black-bet' : ''}`}
-              style={bg ? { background: bg, color: fg } : undefined}
+              style={bg ? { background: bg, color: fg, textShadow: 'var(--game-text-outline-shadow)' } : undefined}
             >
               {l}
             </button>
@@ -374,7 +374,7 @@ export default function BettingGrid({
                       top: pos.y - chipR,
                       width: chipD,
                       height: chipD,
-                      backgroundColor: color?.hex ?? '#888',
+                      backgroundColor: `var(--roulette-player-chip-${chipColor}, ${color?.hex ?? '#888'})`,
                       borderColor: chipBorderColor(parsed?.category),
                       pointerEvents: canBet ? 'auto' : 'none',
                       cursor: canBet ? 'pointer' : 'default',
