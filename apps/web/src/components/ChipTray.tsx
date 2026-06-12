@@ -12,12 +12,12 @@ interface ChipTrayProps {
 
 const DENOMINATIONS = [1, 5, 25, 100, 500];
 
-const CHIP_STYLES: Record<number, { bg: string; text: string; border: string }> = {
-  1:   { bg: 'var(--chip-1-bg)', text: 'var(--chip-1-text)', border: 'var(--chip-1-border)' },
-  5:   { bg: 'var(--chip-5-bg)', text: 'var(--chip-5-text)', border: 'var(--chip-5-border)' },
-  25:  { bg: 'var(--chip-25-bg)', text: 'var(--chip-25-text)', border: 'var(--chip-25-border)' },
-  100: { bg: 'var(--chip-100-bg)', text: 'var(--chip-100-text)', border: 'var(--chip-100-border)' },
-  500: { bg: 'var(--chip-500-bg)', text: 'var(--chip-500-text)', border: 'var(--chip-500-border)' },
+const CHIP_STYLES: Record<number, { bg: string; text: string; border: string; shadow: string }> = {
+  1:   { bg: 'var(--chip-1-bg)', text: 'var(--chip-1-text)', border: 'var(--chip-1-border)', shadow: 'var(--chip-1-text-outline-shadow)' },
+  5:   { bg: 'var(--chip-5-bg)', text: 'var(--chip-5-text)', border: 'var(--chip-5-border)', shadow: 'var(--chip-5-text-outline-shadow)' },
+  25:  { bg: 'var(--chip-25-bg)', text: 'var(--chip-25-text)', border: 'var(--chip-25-border)', shadow: 'var(--chip-25-text-outline-shadow)' },
+  100: { bg: 'var(--chip-100-bg)', text: 'var(--chip-100-text)', border: 'var(--chip-100-border)', shadow: 'var(--chip-100-text-outline-shadow)' },
+  500: { bg: 'var(--chip-500-bg)', text: 'var(--chip-500-text)', border: 'var(--chip-500-border)', shadow: 'var(--chip-500-text-outline-shadow)' },
 };
 
 export default function ChipTray({ selectedAmount, onSelectAmount, onClearBets, onRepeatBet, canBet, hasLastBets, isMobile = false, onStartDrag, wasDragging }: ChipTrayProps) {
@@ -58,7 +58,7 @@ export default function ChipTray({ selectedAmount, onSelectAmount, onClearBets, 
                 border: `2px solid ${isSelected ? 'var(--accent-warm)' : style.border}`,
                 backgroundColor: style.bg,
                 color: style.text,
-                textShadow: 'var(--game-text-outline-shadow)',
+                textShadow: style.shadow,
                 fontWeight: 700,
                 fontSize: isMobile ? '11px' : '10px',
                 cursor: canBet ? 'pointer' : 'not-allowed',
